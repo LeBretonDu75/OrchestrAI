@@ -3,258 +3,5538 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ORCHESTRAi — Shazam Orchestral + Partition Complète</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/vexflow@4.2.3/build/cjs/vexflow.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@magenta/music@1.23.1/dist/magentamusic.min.js"></script>
-<script src="https://unpkg.com/opensheetmusicdisplay@1.8/build/opensheetmusicdisplay.min.js"></script>
+<meta name="theme-color" content="#09090a">
+
+<title>ORCHESTRAi — Audio → Mélodie → Partition</title>
+
+<meta
+  name="description"
+  content="ORCHESTRAi transforme un enregistrement ou un fredonnement en analyse musicale, mélodie, MIDI et MusicXML."
+>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+  href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600;700&display=swap"
+  rel="stylesheet"
+>
+
 <style>
-:root{--bg:#0a0a0b;--panel:#141416;--line:#222227;--gold:#E6C36A;--text:#F5F3EF;--muted:#9A9996}
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Instrument Serif',serif;overflow-x:hidden}
-.mono{font-family:'JetBrains Mono',monospace}
-header{border-bottom:1px solid var(--line);padding:28px 48px;display:flex;justify-content:space-between;align-items:center}
-.logo{font-size:28px;letter-spacing:-0.02em}.logo i{font-style:italic;color:var(--gold)}
-.badge{border:1px solid var(--line);padding:6px 14px;border-radius:100px;font-size:11px;color:var(--muted)}
-.hero{max-width:1200px;margin:0 auto;padding:80px 48px 40px}
-.hero h1{font-size:84px;line-height:0.9;letter-spacing:-0.04em;font-weight:400}
-.hero h1 span{color:var(--gold);font-style:italic}
-.hero p{margin-top:20px;color:var(--muted);font-size:18px;max-width:560px;line-height:1.5}
-.drop{margin:40px 48px;background:var(--panel);border:1px dashed #2A2A2E;border-radius:24px;padding:64px;text-align:center;transition:.3s;cursor:pointer}
-.drop.drag{border-color:var(--gold);background:#1A1812}
-.drop h3{font-size:32px;font-weight:400}.drop p{color:var(--muted);margin-top:8px}
-#waveform{width:100%;height:120px;margin-top:24px;display:none}
-.grid{max-width:1200px;margin:0 auto;padding:0 48px;display:grid;grid-template-columns:1.2fr.8fr;gap:16px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px}
-.card h4{font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
-.fp-canvas{width:100%;height:180px;background:#0E0E10;border-radius:12px}
-.stem{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
-.stem:last-child{border:0}.stem button{background:transparent;border:1px solid var(--line);color:var(--text);padding:6px 12px;border-radius:100px;font-size:11px;cursor:pointer}
-.score-box{background:#FFFEFB;border-radius:20px;padding:16px;min-height:420px}
-.controls{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
-.btn{background:var(--text);color:var(--bg);border:0;padding:12px 20px;border-radius:100px;font-family:'JetBrains Mono';font-size:12px;font-weight:700;cursor:pointer}
-.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
-#status{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:100px;font-family:'JetBrains Mono';font-size:11px;display:none}
+
+/* =========================================================
+   ORCHESTRAi
+   DESIGN SYSTEM
+   ========================================================= */
+
+:root{
+  --bg:#09090a;
+  --panel:#121214;
+  --panel2:#171719;
+  --panel3:#0e0e10;
+
+  --line:#27272b;
+  --line2:#343439;
+
+  --gold:#e6c36a;
+  --gold-dark:#b99542;
+
+  --text:#f5f3ef;
+  --muted:#96949a;
+
+  --green:#78d49b;
+  --red:#ee7777;
+  --blue:#8eafff;
+
+  --radius:20px;
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  min-height:100vh;
+
+  background:
+    radial-gradient(
+      circle at 50% -20%,
+      rgba(230,195,106,.12),
+      transparent 38%
+    ),
+    radial-gradient(
+      circle at 100% 30%,
+      rgba(120,130,255,.035),
+      transparent 30%
+    ),
+    var(--bg);
+
+  color:var(--text);
+
+  font-family:"Instrument Serif",serif;
+
+  overflow-x:hidden;
+}
+
+button,
+input{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.mono{
+  font-family:"JetBrains Mono",monospace;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+header{
+  height:76px;
+
+  border-bottom:1px solid var(--line);
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  padding:0 44px;
+
+  backdrop-filter:blur(14px);
+
+  position:sticky;
+  top:0;
+  z-index:50;
+
+  background:rgba(9,9,10,.84);
+}
+
+.logo{
+  font-family:"JetBrains Mono",monospace;
+  font-weight:700;
+  font-size:20px;
+  letter-spacing:-.05em;
+}
+
+.logo i{
+  color:var(--gold);
+  font-family:"Instrument Serif",serif;
+  font-size:31px;
+}
+
+.badge{
+  border:1px solid var(--line);
+
+  border-radius:999px;
+
+  padding:7px 13px;
+
+  color:var(--muted);
+
+  font-family:"JetBrains Mono",monospace;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.04em;
+}
+
+/* =========================================================
+   HERO
+   ========================================================= */
+
+.hero{
+  max-width:1240px;
+  margin:auto;
+
+  padding:105px 44px 55px;
+}
+
+.hero h1{
+  font-size:
+    clamp(
+      60px,
+      9vw,
+      120px
+    );
+
+  line-height:.82;
+
+  letter-spacing:-.065em;
+
+  font-weight:400;
+}
+
+.hero h1 span{
+  color:var(--gold);
+  font-style:italic;
+}
+
+.hero p{
+  max-width:720px;
+
+  margin-top:34px;
+
+  color:var(--muted);
+
+  font-size:19px;
+
+  line-height:1.55;
+}
+
+/* =========================================================
+   MAIN
+   ========================================================= */
+
+.app{
+  max-width:1240px;
+  margin:auto;
+
+  padding:0 44px 90px;
+}
+
+/* =========================================================
+   DROP ZONE
+   ========================================================= */
+
+.drop{
+  position:relative;
+
+  min-height:260px;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+
+  text-align:center;
+
+  padding:35px;
+
+  border:1px dashed #39393f;
+
+  border-radius:25px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #111113,
+      #151416
+    );
+
+  overflow:hidden;
+
+  transition:
+    border-color .25s,
+    background .25s,
+    transform .25s;
+}
+
+.drop::before{
+  content:"";
+
+  position:absolute;
+  inset:0;
+
+  pointer-events:none;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(230,195,106,.09),
+      transparent 55%
+    );
+}
+
+.drop.drag{
+  border-color:var(--gold);
+
+  background:#17150f;
+
+  transform:scale(1.006);
+}
+
+.drop h2{
+  position:relative;
+
+  font-size:35px;
+  font-weight:400;
+}
+
+.drop p{
+  position:relative;
+
+  margin-top:8px;
+
+  color:var(--muted);
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:11px;
+}
+
+.actions{
+  position:relative;
+
+  display:flex;
+  flex-wrap:wrap;
+
+  align-items:center;
+
+  justify-content:center;
+
+  gap:8px;
+
+  margin-top:24px;
+}
+
+.btn{
+  border:0;
+
+  border-radius:999px;
+
+  padding:12px 19px;
+
+  background:var(--text);
+
+  color:#09090a;
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:10px;
+  font-weight:700;
+
+  transition:
+    transform .2s,
+    opacity .2s,
+    background .2s;
+}
+
+.btn:hover{
+  transform:translateY(-1px);
+}
+
+.btn:active{
+  transform:translateY(0);
+}
+
+.btn:disabled{
+  opacity:.35;
+  cursor:not-allowed;
+  transform:none;
+}
+
+.btn.gold{
+  background:var(--gold);
+}
+
+.btn.secondary{
+  color:var(--text);
+
+  background:transparent;
+
+  border:1px solid var(--line);
+}
+
+.btn.secondary:hover{
+  border-color:var(--line2);
+  background:#151517;
+}
+
+input[type="file"]{
+  display:none;
+}
+
+/* =========================================================
+   WAVEFORM
+   ========================================================= */
+
+.wave-wrap{
+  width:100%;
+
+  margin-top:20px;
+
+  display:none;
+
+  border-radius:14px;
+
+  overflow:hidden;
+
+  background:#0c0c0e;
+
+  border:1px solid #202025;
+}
+
+#wave{
+  display:block;
+
+  width:100%;
+  height:110px;
+}
+
+/* =========================================================
+   PROGRESS
+   ========================================================= */
+
+.progress{
+  width:100%;
+
+  height:4px;
+
+  margin-top:17px;
+
+  overflow:hidden;
+
+  display:none;
+
+  border-radius:999px;
+
+  background:#202025;
+}
+
+.progress i{
+  display:block;
+
+  width:0;
+  height:100%;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--gold-dark),
+      var(--gold)
+    );
+
+  border-radius:999px;
+
+  transition:width .12s;
+}
+
+/* =========================================================
+   GRID
+   ========================================================= */
+
+.grid{
+  display:grid;
+
+  grid-template-columns:
+    1.15fr
+    .85fr;
+
+  gap:15px;
+
+  margin-top:15px;
+}
+
+.card{
+  min-width:0;
+
+  padding:23px;
+
+  background:rgba(18,18,20,.96);
+
+  border:1px solid var(--line);
+
+  border-radius:21px;
+}
+
+.full{
+  grid-column:1/-1;
+}
+
+.label{
+  margin-bottom:17px;
+
+  color:var(--muted);
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:10px;
+  font-weight:700;
+
+  letter-spacing:.15em;
+
+  text-transform:uppercase;
+}
+
+/* =========================================================
+   FINGERPRINT / SPECTRUM
+   ========================================================= */
+
+#fingerprint{
+  display:block;
+
+  width:100%;
+  height:190px;
+
+  background:#0b0b0d;
+
+  border-radius:13px;
+}
+
+/* =========================================================
+   METRICS
+   ========================================================= */
+
+.metrics{
+  display:grid;
+
+  grid-template-columns:
+    repeat(4,1fr);
+
+  gap:8px;
+
+  margin-top:14px;
+}
+
+.metric{
+  padding:12px;
+
+  background:#0e0e10;
+
+  border:1px solid #202025;
+
+  border-radius:12px;
+}
+
+.metric small{
+  display:block;
+
+  margin-bottom:7px;
+
+  color:var(--muted);
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:8px;
+  font-weight:700;
+}
+
+.metric strong{
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:13px;
+  font-weight:600;
+}
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+.statusline{
+  display:flex;
+  align-items:center;
+
+  gap:8px;
+
+  margin-top:15px;
+
+  color:var(--muted);
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:10px;
+}
+
+.dot{
+  width:8px;
+  height:8px;
+
+  flex:none;
+
+  border-radius:50%;
+
+  background:#555;
+}
+
+.dot.ok{
+  background:var(--green);
+
+  box-shadow:
+    0 0 12px
+    rgba(120,212,155,.2);
+}
+
+.dot.busy{
+  background:var(--gold);
+
+  box-shadow:
+    0 0 0 5px
+    rgba(230,195,106,.07);
+}
+
+.dot.error{
+  background:var(--red);
+}
+
+/* =========================================================
+   ANALYSIS TABLE
+   ========================================================= */
+
+.analysis{
+  margin-top:17px;
+
+  padding-top:9px;
+
+  border-top:1px solid var(--line);
+}
+
+.analysis-row{
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+
+  padding:9px 0;
+
+  border-bottom:1px solid #202025;
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:10px;
+}
+
+.analysis-row span{
+  color:var(--muted);
+}
+
+/* =========================================================
+   STEMS
+   ========================================================= */
+
+.stems{
+  display:flex;
+  flex-direction:column;
+
+  gap:7px;
+}
+
+.stem{
+  display:grid;
+
+  grid-template-columns:
+    1fr
+    auto;
+
+  gap:12px;
+
+  align-items:center;
+
+  padding:14px;
+
+  background:#0e0e10;
+
+  border:1px solid var(--line);
+
+  border-radius:13px;
+}
+
+.stem-name{
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:10px;
+  font-weight:700;
+}
+
+.stem-info{
+  margin-top:5px;
+
+  color:var(--muted);
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:9px;
+
+  line-height:1.5;
+}
+
+.stem button{
+  padding:7px 10px;
+
+  color:var(--text);
+
+  background:transparent;
+
+  border:1px solid var(--line);
+
+  border-radius:999px;
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:8px;
+  font-weight:700;
+}
+
+/* =========================================================
+   SCORE
+   ========================================================= */
+
+.score{
+  min-height:450px;
+
+  padding:20px;
+
+  overflow:auto;
+
+  background:#fffdf8;
+
+  border-radius:17px;
+}
+
+#scoreCanvas{
+  min-height:400px;
+}
+
+.score-empty{
+  min-height:400px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  color:#777;
+
+  text-align:center;
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:11px;
+}
+
+#scoreCanvas canvas{
+  display:block;
+
+  max-width:none;
+}
+
+/* =========================================================
+   HUMMING
+   ========================================================= */
+
+.humming{
+  padding:20px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #15130e,
+      #111113
+    );
+
+  border:1px solid #2e2a20;
+}
+
+.humming h3{
+  font-size:23px;
+
+  font-weight:400;
+}
+
+.humming p{
+  max-width:800px;
+
+  margin-top:7px;
+
+  color:var(--muted);
+
+  font-size:13px;
+
+  line-height:1.55;
+}
+
+#hummingResult{
+  margin-top:15px;
+
+  padding:13px;
+
+  background:#0d0d0f;
+
+  border:1px solid #25231e;
+
+  border-radius:12px;
+
+  color:var(--gold);
+
+  white-space:pre-wrap;
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:10px;
+
+  line-height:1.6;
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+footer{
+  max-width:1240px;
+
+  margin:auto;
+
+  padding:
+    0
+    44px
+    40px;
+
+  color:#59585d;
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:9px;
+
+  line-height:1.7;
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+#toast{
+  position:fixed;
+
+  left:50%;
+  bottom:25px;
+
+  z-index:100;
+
+  transform:
+    translate(-50%,20px);
+
+  opacity:0;
+
+  pointer-events:none;
+
+  padding:10px 17px;
+
+  color:#09090a;
+
+  background:#f5f3ef;
+
+  border-radius:999px;
+
+  font-family:"JetBrains Mono",monospace;
+
+  font-size:10px;
+  font-weight:700;
+
+  transition:
+    opacity .25s,
+    transform .25s;
+}
+
+#toast.show{
+  opacity:1;
+
+  transform:
+    translate(-50%,0);
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media(max-width:850px){
+
+  header{
+    padding:0 20px;
+  }
+
+  .badge{
+    display:none;
+  }
+
+  .hero{
+    padding:
+      70px
+      20px
+      35px;
+  }
+
+  .app{
+    padding:
+      0
+      20px
+      70px;
+  }
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  .full{
+    grid-column:auto;
+  }
+
+  .metrics{
+    grid-template-columns:
+      1fr
+      1fr;
+  }
+
+  .drop{
+    min-height:225px;
+  }
+
+  footer{
+    padding-left:20px;
+    padding-right:20px;
+  }
+}
+
+@media(max-width:500px){
+
+  .hero h1{
+    font-size:58px;
+  }
+
+  .hero p{
+    font-size:16px;
+  }
+
+  .metrics{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .score{
+    padding:10px;
+  }
+}
+
 </style>
 </head>
+
 <body>
+
+<!-- =======================================================
+     HEADER
+     ======================================================= -->
+
 <header>
-<div class="logo mono">ORCHESTRA<span style="font-family:'Instrument Serif'"><i>i</i></span></div>
-<div class="badge mono">v2.0 — FILM • CLASSIQUE • BO — MT3 + DEMUCS</div>
+
+  <div class="logo">
+    ORCHESTRA<span><i>i</i></span>
+  </div>
+
+  <div class="badge">
+    V3 · LOCAL-FIRST · AUDIO → MUSIC
+  </div>
+
 </header>
 
-<div class="hero">
-<h1>Shazam,<br><span>mais qui écrit</span><br>la partition.</h1>
-<p>Reconnaissance d'empreinte audio + séparation orchestrale par famille + transcription polyphonique complète vers MusicXML / MuseScore. Spécialisé musiques de film et classique.</p>
-</div>
 
-<div class="drop" id="drop">
-<h3 id="dropTitle">Dépose ton WAV / MP3 / FLAC ici</h3>
-<p class="mono" id="dropSub">ou clique — analyse locale, rien n'est envoyé</p>
-<button class="btn ghost mono" onclick="enableHumming()" style="margin-top:16px">🎤 FREDONNER LA MELODIE</button>
-<input type="file" id="file" hidden accept="audio/*">
-<canvas id="waveform"></canvas>
-</div>
+<!-- =======================================================
+     HERO
+     ======================================================= -->
 
-<div class="grid">
-<div class="card">
-<h4 class="mono">01 / Fingerprint Shazam • Spectrogramme</h4>
-<canvas id="fp" class="fp-canvas"></canvas>
-<div style="margin-top:16px;display:flex;gap:12px">
-<div><div class="mono" style="font-size:10px;color:var(--muted)">MATCH</div><div id="match" style="font-size:22px">—</div></div>
-<div><div class="mono" style="font-size:10px;color:var(--muted)">TEMPO / TONALITÉ</div><div id="tempo" class="mono" style="font-size:14px">—</div></div>
-</div>
-</div>
+<section class="hero">
 
-<div class="card">
-<h4 class="mono">02 / Séparation Orchestrale [DEMUCS 6s]</h4>
-<div id="stems"></div>
-</div>
+  <h1>
+    Écoute.<br>
+    <span>Comprends.</span><br>
+    Écris.
+  </h1>
 
-<div class="card" style="grid-column:1 / -1">
-<h4 class="mono">03 / Partition complète — Rendu temps réel</h4>
-<div id="osmd" class="score-box"></div>
-<div class="controls">
-<button class="btn" onclick="exportMusicXML()">EXPORT MusicXML → MuseScore</button>
-<button class="btn" onclick="exportMIDI()">EXPORT MIDI</button>
-<button class="btn ghost" onclick="exportPDF()">EXPORT PDF</button>
-<button class="btn ghost mono" id="transposeBtn">TRANSPOSER Mi → Fa : -1/2 ton</button>
-</div>
-</div>
-</div>
+  <p>
+    ORCHESTRAi analyse un enregistrement musical ou un
+    fredonnement pour en extraire les informations musicales :
+    tonalité, tempo, mélodie, notes, MIDI et MusicXML.
+    Le traitement de base fonctionne directement dans ton navigateur.
+  </p>
 
-<div id="status" class="mono"></div>
+</section>
+
+
+<!-- =======================================================
+     APPLICATION
+     ======================================================= -->
+
+<main class="app">
+
+  <!-- =====================================================
+       AUDIO DROP
+       ===================================================== -->
+
+  <section
+    class="drop"
+    id="drop"
+  >
+
+    <h2 id="dropTitle">
+      Dépose ton audio ici
+    </h2>
+
+    <p id="dropSub">
+      WAV · MP3 · FLAC · OGG · analyse locale
+    </p>
+
+    <div class="actions">
+
+      <button
+        class="btn"
+        id="chooseBtn"
+        type="button"
+      >
+        CHOISIR UN FICHIER
+      </button>
+
+      <button
+        class="btn gold"
+        id="humBtn"
+        type="button"
+      >
+        🎙 FREDONNER
+      </button>
+
+    </div>
+
+    <input
+      id="file"
+      type="file"
+      accept="audio/*"
+    >
+
+    <div
+      class="wave-wrap"
+      id="waveWrap"
+    >
+      <canvas id="wave"></canvas>
+    </div>
+
+    <div
+      class="progress"
+      id="progress"
+    >
+      <i></i>
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       GRID
+       ===================================================== -->
+
+  <section class="grid">
+
+
+    <!-- ===================================================
+         ANALYSE
+         =================================================== -->
+
+    <article class="card">
+
+      <div class="label">
+        01 / empreinte musicale
+      </div>
+
+      <canvas
+        id="fingerprint"
+      ></canvas>
+
+      <div class="metrics">
+
+        <div class="metric">
+          <small>TONALITÉ</small>
+          <strong id="key">—</strong>
+        </div>
+
+        <div class="metric">
+          <small>TEMPO</small>
+          <strong id="tempo">—</strong>
+        </div>
+
+        <div class="metric">
+          <small>MESURE</small>
+          <strong id="meter">—</strong>
+        </div>
+
+        <div class="metric">
+          <small>CONFIANCE</small>
+          <strong id="confidence">—</strong>
+        </div>
+
+      </div>
+
+      <div class="statusline">
+
+        <span
+          class="dot"
+          id="audioDot"
+        ></span>
+
+        <span id="audioStatus">
+          Aucun audio chargé
+        </span>
+
+      </div>
+
+      <div class="analysis">
+
+        <div class="analysis-row">
+          <span>Durée</span>
+          <strong id="duration">—</strong>
+        </div>
+
+        <div class="analysis-row">
+          <span>Échantillonnage</span>
+          <strong id="sampleRate">—</strong>
+        </div>
+
+        <div class="analysis-row">
+          <span>Canaux</span>
+          <strong id="channels">—</strong>
+        </div>
+
+        <div class="analysis-row">
+          <span>Énergie RMS</span>
+          <strong id="rms">—</strong>
+        </div>
+
+      </div>
+
+    </article>
+
+
+    <!-- ===================================================
+         SEPARATION
+         =================================================== -->
+
+    <article class="card">
+
+      <div class="label">
+        02 / séparation des sources
+      </div>
+
+      <div
+        class="stems"
+        id="stems"
+      >
+
+        <div class="stem">
+
+          <div>
+
+            <div class="stem-name">
+              AUDIO ORIGINAL
+            </div>
+
+            <div class="stem-info">
+              En attente d'un fichier audio
+            </div>
+
+          </div>
+
+          <button
+            type="button"
+            disabled
+          >
+            —
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="statusline">
+
+        <span
+          class="dot"
+          id="sepDot"
+        ></span>
+
+        <span id="sepStatus">
+          Séparation inactive
+        </span>
+
+      </div>
+
+      <p
+        style="
+          margin-top:14px;
+          color:var(--muted);
+          font:10px 'JetBrains Mono';
+          line-height:1.6;
+        "
+      >
+        Le moteur de séparation est prévu comme module
+        indépendant. Il peut recevoir Demucs/ONNX/WebGPU
+        sans modifier le reste de l'application.
+      </p>
+
+    </article>
+
+
+    <!-- ===================================================
+         PARTITION
+         =================================================== -->
+
+    <article class="card full">
+
+      <div class="label">
+        03 / transcription musicale
+      </div>
+
+      <div class="score">
+
+        <div
+          id="scoreCanvas"
+          class="score-empty"
+        >
+          Charge un morceau pour lancer la transcription.
+        </div>
+
+      </div>
+
+      <div class="controls actions"
+           style="justify-content:flex-start;margin-top:14px;">
+
+        <button
+          class="btn"
+          id="transcribeBtn"
+          type="button"
+        >
+          TRANSCRIRE
+        </button>
+
+        <button
+          class="btn secondary"
+          id="xmlBtn"
+          type="button"
+        >
+          EXPORT MUSICXML
+        </button>
+
+        <button
+          class="btn secondary"
+          id="midiBtn"
+          type="button"
+        >
+          EXPORT MIDI
+        </button>
+
+        <button
+          class="btn secondary"
+          id="playBtn"
+          type="button"
+        >
+          ▶ ÉCOUTER
+        </button>
+
+      </div>
+
+      <div class="statusline">
+
+        <span
+          class="dot"
+          id="transDot"
+        ></span>
+
+        <span id="transStatus">
+          Moteur de transcription en attente
+        </span>
+
+      </div>
+
+    </article>
+
+
+    <!-- ===================================================
+         HUMMING
+         =================================================== -->
+
+    <article class="card full humming">
+
+      <h3>
+        Fredonnement → mélodie
+      </h3>
+
+      <p>
+        Fredonne naturellement une mélodie pendant quelques secondes.
+        ORCHESTRAi extrait sa hauteur fondamentale, nettoie les
+        variations mineures et reconstruit un contour mélodique.
+        La mélodie peut ainsi être comparée même si elle est chantée
+        dans une autre tonalité.
+      </p>
+
+      <div
+        class="actions"
+        style="
+          justify-content:flex-start;
+          margin-top:18px;
+        "
+      >
+
+        <button
+          class="btn gold"
+          id="recordBtn"
+          type="button"
+        >
+          ● ENREGISTRER 8 S
+        </button>
+
+      </div>
+
+      <div id="hummingResult">
+        Aucun fredonnement analysé.
+      </div>
+
+    </article>
+
+  </section>
+
+</main>
+
+
+<!-- =======================================================
+     FOOTER
+     ======================================================= -->
+
+<footer>
+
+  ORCHESTRAi V3 ·
+  Audio → analyse musicale → mélodie → MIDI / MusicXML.
+
+  <br>
+
+  Le navigateur ne prétend pas exécuter un modèle neuronal
+  lourd lorsqu'il n'est pas réellement chargé.
+
+</footer>
+
+
+<!-- =======================================================
+     TOAST
+     ======================================================= -->
+
+<div id="toast"></div>
+
 
 <script>
-// --- ORCHESTRAi CORE ---
-const AudioCtx = new (window.AudioContext||window.webkitAudioContext)();
-let audioBuffer, allNotes=[];
 
-const drop=document.getElementById('drop');
-const fileInput=document.getElementById('file');
-drop.onclick=()=>fileInput.click();
-drop.ondragover=e=>{e.preventDefault();drop.classList.add('drag')};
-drop.ondragleave=()=>drop.classList.remove('drag');
-drop.ondrop=e=>{e.preventDefault();drop.classList.remove('drag');handleFile(e.dataTransfer.files[0])};
-fileInput.onchange=e=>handleFile(e.target.files[0]);
+/* =========================================================
+   ORCHESTRAi ENGINE
+   ========================================================= */
 
-async function handleFile(f){
-  toast("Analyse...");
-  document.getElementById('dropTitle').innerText=f.name;
-  const ab=await f.arrayBuffer();
-  audioBuffer=await AudioCtx.decodeAudioData(ab);
-  drawWaveform(audioBuffer);
-  drawFingerprint(audioBuffer);
-  analyze();
-  separate();
-  transcribe();
+"use strict";
+
+
+/* =========================================================
+   GLOBAL STATE
+   ========================================================= */
+
+const state = {
+
+  audioContext:null,
+
+  buffer:null,
+
+  notes:[],
+
+  analysis:null,
+
+  humming:null,
+
+  recorder:null,
+
+  recording:false,
+
+  recordingChunks:[],
+
+  sourceNode:null
+
+};
+
+
+/* =========================================================
+   NOTE NAMES
+   ========================================================= */
+
+const NOTE_NAMES = [
+
+  "C",
+  "C♯",
+  "D",
+  "E♭",
+  "E",
+  "F",
+  "F♯",
+  "G",
+  "A♭",
+  "A",
+  "B♭",
+  "B"
+
+];
+
+
+/* =========================================================
+   SHORTCUT
+   ========================================================= */
+
+function $(id){
+
+  return document.getElementById(id);
+
 }
 
-function drawWaveform(buf){
-  const c=document.getElementById('waveform');c.style.display='block';
-  const ctx=c.getContext('2d');c.width=c.offsetWidth*2;c.height=120*2;
-  ctx.clearRect(0,0,c.width,c.height);
-  const data=buf.getChannelData(0);const step=Math.ceil(data.length/c.width);
-  ctx.strokeStyle='#E6C36A';ctx.beginPath();
-  for(let i=0;i<c.width;i++){let min=1,max=-1;for(let j=0;j<step;j++){const d=data[i*step+j];if(d<min)min=d;if(d>max)max=d}ctx.lineTo(i,c.height/2+min*50); }
-  ctx.stroke();
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+function toast(message){
+
+  const element = $("toast");
+
+  element.textContent =
+    message;
+
+  element.classList.add("show");
+
+  clearTimeout(
+    toast.timeout
+  );
+
+  toast.timeout =
+    setTimeout(
+      ()=>{
+        element.classList.remove("show");
+      },
+      2800
+    );
+
 }
 
-function drawFingerprint(buf){
-  const c=document.getElementById('fp');const ctx=c.getContext('2d');
-  c.width=600;c.height=180;
-  // Spectro fake visuel haute qualité
-  for(let x=0;x<600;x++){for(let y=0;y<180;y++){const v=Math.random()* (Math.sin(x*0.05)*20+20);ctx.fillStyle=`hsl(40, 20%, ${5+v}%)`;ctx.fillRect(x,y,1,1)}}
-  // pics Shazam
-  ctx.fillStyle='#E6C36A';for(let i=0;i<80;i++){ctx.beginPath();ctx.arc(Math.random()*600,Math.random()*180,1.5,0,Math.PI*2);ctx.fill()}
-  document.getElementById('match').innerText="BO Film détectée • 94.2%";
-  document.getElementById('tempo').innerText="92 BPM • Fa Majeur • 4/4";
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+function setStatus(
+  dot,
+  textElement,
+  message,
+  type=""
+){
+
+  if(dot){
+
+    dot.className =
+      "dot " + type;
+
+  }
+
+  if(textElement){
+
+    textElement.textContent =
+      message;
+
+  }
+
 }
 
-function analyze(){
-  // Ici tu brancherais ton index FAISS de BO
-  document.getElementById('stems').innerHTML=`
-    <div class="stem"><span class="mono">STRINGS — Violons I/II, Altos, Cellos</span><button>▶ SOLO</button></div>
-    <div class="stem"><span class="mono">BRASS — Cors en Fa, Trompettes, Trombones</span><button>▶ SOLO</button></div>
-    <div class="stem"><span class="mono">WOODWINDS — Flûtes, Hautbois, Clarinettes</span><button>▶ SOLO</button></div>
-    <div class="stem"><span class="mono">PERCUSSION — Timpani, Harpe, Piano</span><button>▶ SOLO</button></div>
+
+/* =========================================================
+   PROGRESS
+   ========================================================= */
+
+function setProgress(
+  value,
+  visible=true
+){
+
+  const progress =
+    $("progress");
+
+  const bar =
+    progress.querySelector("i");
+
+  progress.style.display =
+    visible
+    ? "block"
+    : "none";
+
+  bar.style.width =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        value
+      )
+    ) + "%";
+
+}
+
+
+/* =========================================================
+   AUDIO CONTEXT
+   ========================================================= */
+
+async function getAudioContext(){
+
+  if(!state.audioContext){
+
+    state.audioContext =
+      new (
+        window.AudioContext ||
+        window.webkitAudioContext
+      )();
+
+  }
+
+  if(
+    state.audioContext.state ===
+    "suspended"
+  ){
+
+    await state.audioContext.resume();
+
+  }
+
+  return state.audioContext;
+
+}
+
+
+/* =========================================================
+   FILE INPUT
+   ========================================================= */
+
+$("chooseBtn").addEventListener(
+  "click",
+  event=>{
+
+    event.stopPropagation();
+
+    $("file").click();
+
+  }
+);
+
+
+$("drop").addEventListener(
+  "click",
+  event=>{
+
+    /*
+      Empêche un clic sur un bouton
+      de rouvrir le sélecteur.
+    */
+
+    if(
+      event.target.closest("button")
+    ){
+
+      return;
+
+    }
+
+    $("file").click();
+
+  }
+);
+
+
+$("file").addEventListener(
+  "change",
+  event=>{
+
+    const file =
+      event.target.files?.[0];
+
+    if(file){
+
+      handleFile(file);
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   DRAG & DROP
+   ========================================================= */
+
+$("drop").addEventListener(
+  "dragover",
+  event=>{
+
+    event.preventDefault();
+
+    $("drop")
+      .classList
+      .add("drag");
+
+  }
+);
+
+
+$("drop").addEventListener(
+  "dragleave",
+  ()=>{
+
+    $("drop")
+      .classList
+      .remove("drag");
+
+  }
+);
+
+
+$("drop").addEventListener(
+  "drop",
+  event=>{
+
+    event.preventDefault();
+
+    $("drop")
+      .classList
+      .remove("drag");
+
+    const file =
+      event.dataTransfer.files?.[0];
+
+    if(file){
+
+      handleFile(file);
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   MAIN FILE HANDLER
+   ========================================================= */
+
+async function handleFile(file){
+
+  if(
+    !file.type.startsWith("audio/")
+  ){
+
+    toast(
+      "Ce fichier n'est pas un fichier audio."
+    );
+
+    return;
+
+  }
+
+  try{
+
+    toast("Décodage audio…");
+
+    setStatus(
+      $("audioDot"),
+      $("audioStatus"),
+      "Décodage du fichier…",
+      "busy"
+    );
+
+    const context =
+      await getAudioContext();
+
+    const data =
+      await file.arrayBuffer();
+
+    state.buffer =
+      await context.decodeAudioData(
+        data
+      );
+
+    $("dropTitle").textContent =
+      file.name;
+
+    $("dropSub").textContent =
+      `${formatTime(state.buffer.duration)} · ${state.buffer.sampleRate} Hz`;
+
+    $("duration").textContent =
+      formatTime(
+        state.buffer.duration
+      );
+
+    $("sampleRate").textContent =
+      `${state.buffer.sampleRate} Hz`;
+
+    $("channels").textContent =
+      state.buffer.numberOfChannels;
+
+    $("rms").textContent =
+      calculateRMS(
+        state.buffer
+      ).toFixed(4);
+
+    $("waveWrap").style.display =
+      "block";
+
+    drawWaveform(
+      state.buffer
+    );
+
+    /*
+      Analyse musicale locale.
+    */
+
+    const analysis =
+      analyzeAudio(
+        state.buffer
+      );
+
+    state.analysis =
+      analysis;
+
+    $("key").textContent =
+      analysis.key;
+
+    $("tempo").textContent =
+      `${analysis.bpm} BPM`;
+
+    $("meter").textContent =
+      `${analysis.meter}/4`;
+
+    $("confidence").textContent =
+      `${Math.round(
+        analysis.confidence*100
+      )}%`;
+
+    drawFingerprint(
+      state.buffer
+    );
+
+    setStatus(
+      $("audioDot"),
+      $("audioStatus"),
+      "Analyse locale terminée",
+      "ok"
+    );
+
+    renderSourcePanel();
+
+    toast(
+      "Analyse terminée."
+    );
+
+    /*
+      Pour éviter une interface bloquée sur
+      des fichiers gigantesques.
+    */
+
+    if(
+      state.buffer.duration <= 180
+    ){
+
+      await transcribe();
+
+    }else{
+
+      toast(
+        "Audio long : lance la transcription manuellement."
+      );
+
+    }
+
+  }catch(error){
+
+    console.error(error);
+
+    setStatus(
+      $("audioDot"),
+      $("audioStatus"),
+      "Erreur de décodage",
+      "error"
+    );
+
+    toast(
+      "Impossible de décoder cet audio."
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   FORMAT TIME
+   ========================================================= */
+
+function formatTime(seconds){
+
+  const minutes =
+    Math.floor(
+      seconds/60
+    );
+
+  const remaining =
+    Math.floor(
+      seconds%60
+    );
+
+  return (
+    String(minutes)
+      .padStart(2,"0")
+    +
+    ":"
+    +
+    String(remaining)
+      .padStart(2,"0")
+  );
+
+}
+
+
+/* =========================================================
+   MONO CONVERSION
+   ========================================================= */
+
+function getMono(buffer){
+
+  const length =
+    buffer.length;
+
+  const channels =
+    buffer.numberOfChannels;
+
+  if(channels===1){
+
+    return buffer.getChannelData(0);
+
+  }
+
+  const result =
+    new Float32Array(
+      length
+    );
+
+  for(
+    let channel=0;
+    channel<channels;
+    channel++
+  ){
+
+    const data =
+      buffer.getChannelData(
+        channel
+      );
+
+    for(
+      let i=0;
+      i<length;
+      i++
+    ){
+
+      result[i] +=
+        data[i]/channels;
+
+    }
+
+  }
+
+  return result;
+
+}
+
+
+/* =========================================================
+   RMS
+   ========================================================= */
+
+function calculateRMS(buffer){
+
+  const data =
+    getMono(buffer);
+
+  const step =
+    Math.max(
+      1,
+      Math.floor(
+        data.length/250000
+      )
+    );
+
+  let sum=0;
+  let count=0;
+
+  for(
+    let i=0;
+    i<data.length;
+    i+=step
+  ){
+
+    const value =
+      data[i];
+
+    sum +=
+      value*value;
+
+    count++;
+
+  }
+
+  return Math.sqrt(
+    sum/
+    Math.max(
+      1,
+      count
+    )
+  );
+
+}
+
+
+/* =========================================================
+   WAVEFORM
+   ========================================================= */
+
+function drawWaveform(buffer){
+
+  const canvas =
+    $("wave");
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+  const dpr =
+    Math.min(
+      window.devicePixelRatio || 1,
+      2
+    );
+
+  canvas.width =
+    Math.max(
+      300,
+      rect.width*dpr
+    );
+
+  canvas.height =
+    110*dpr;
+
+  const context =
+    canvas.getContext("2d");
+
+  context.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  const data =
+    getMono(buffer);
+
+  const width =
+    canvas.width;
+
+  const height =
+    canvas.height;
+
+  const step =
+    Math.max(
+      1,
+      Math.floor(
+        data.length/width
+      )
+    );
+
+  context.strokeStyle =
+    "#e6c36a";
+
+  context.lineWidth =
+    Math.max(
+      1,
+      dpr
+    );
+
+  context.beginPath();
+
+  for(
+    let x=0;
+    x<width;
+    x++
+  ){
+
+    let minimum=1;
+    let maximum=-1;
+
+    const start =
+      x*step;
+
+    const end =
+      Math.min(
+        data.length,
+        start+step
+      );
+
+    for(
+      let i=start;
+      i<end;
+      i++
+    ){
+
+      const value =
+        data[i];
+
+      if(value<minimum)
+        minimum=value;
+
+      if(value>maximum)
+        maximum=value;
+
+    }
+
+    context.moveTo(
+      x,
+      height/2+
+      minimum*
+      height*.38
+    );
+
+    context.lineTo(
+      x,
+      height/2+
+      maximum*
+      height*.38
+    );
+
+  }
+
+  context.stroke();
+
+}
+
+
+/* =========================================================
+   SPECTRUM
+   ========================================================= */
+
+function drawFingerprint(buffer){
+
+  const canvas =
+    $("fingerprint");
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+  const dpr =
+    Math.min(
+      window.devicePixelRatio || 1,
+      2
+    );
+
+  canvas.width =
+    Math.max(
+      600,
+      rect.width*dpr
+    );
+
+  canvas.height =
+    190*dpr;
+
+  const context =
+    canvas.getContext("2d");
+
+  context.fillStyle =
+    "#0b0b0d";
+
+  context.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  const data =
+    getMono(buffer);
+
+  const width =
+    canvas.width;
+
+  const height =
+    canvas.height;
+
+  const fftSize =
+    1024;
+
+  const columns =
+    Math.min(
+      400,
+      Math.max(
+        100,
+        Math.floor(width)
+      )
+    );
+
+  const usable =
+    Math.max(
+      1,
+      data.length-
+      fftSize
+    );
+
+  for(
+    let column=0;
+    column<columns;
+    column++
+  ){
+
+    const position =
+      Math.floor(
+        column/
+        Math.max(
+          1,
+          columns-1
+        )*
+        usable
+      );
+
+    const spectrum =
+      magnitudeSpectrum(
+        data,
+        position,
+        fftSize
+      );
+
+    for(
+      let y=0;
+      y<height;
+      y+=2
+    ){
+
+      const normalized =
+        1-
+        y/height;
+
+      const bin =
+        Math.floor(
+          normalized*
+          (spectrum.length-1)
+        );
+
+      const magnitude =
+        Math.pow(
+          spectrum[bin],
+          .35
+        );
+
+      const light =
+        4+
+        magnitude*60;
+
+      const hue =
+        35+
+        magnitude*35;
+
+      context.fillStyle =
+        `hsl(${hue},70%,${light}%)`;
+
+      context.fillRect(
+        column*
+          (width/columns),
+        y,
+        Math.ceil(
+          width/columns
+        )+1,
+        2
+      );
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   FFT-LIKE SPECTRUM
+   ========================================================= */
+
+function magnitudeSpectrum(
+  data,
+  start,
+  size
+){
+
+  const real =
+    new Float32Array(size);
+
+  const imaginary =
+    new Float32Array(size);
+
+  for(
+    let i=0;
+    i<size;
+    i++
+  ){
+
+    const sample =
+      data[start+i] || 0;
+
+    const window =
+      .5-
+      .5*
+      Math.cos(
+        2*Math.PI*i/
+        (size-1)
+      );
+
+    real[i] =
+      sample*window;
+
+  }
+
+  const bins =
+    Math.floor(
+      size/2
+    );
+
+  const output =
+    new Float32Array(
+      bins
+    );
+
+  /*
+    DFT partielle.
+    Elle est volontairement simple afin que le fichier
+    reste totalement autonome.
+
+    Pour une V4 lourde :
+    FFT WASM / WebGPU.
+  */
+
+  for(
+    let k=0;
+    k<bins;
+    k++
+  ){
+
+    let realPart=0;
+    let imaginaryPart=0;
+
+    const angle =
+      -2*Math.PI*k/size;
+
+    /*
+      Sous-échantillonnage x4
+      pour préserver la fluidité.
+    */
+
+    for(
+      let n=0;
+      n<size;
+      n+=4
+    ){
+
+      const phase =
+        angle*n;
+
+      const value =
+        real[n];
+
+      realPart +=
+        value*
+        Math.cos(phase);
+
+      imaginaryPart +=
+        value*
+        Math.sin(phase);
+
+    }
+
+    output[k] =
+      Math.sqrt(
+        realPart*
+        realPart+
+        imaginaryPart*
+        imaginaryPart
+      )/
+      (size/4);
+
+  }
+
+  return output;
+
+}
+
+
+/* =========================================================
+   AUDIO ANALYSIS
+   ========================================================= */
+
+function analyzeAudio(buffer){
+
+  const data =
+    getMono(buffer);
+
+  const bpm =
+    estimateTempo(
+      data,
+      buffer.sampleRate
+    );
+
+  const chroma =
+    estimateChroma(
+      data,
+      buffer.sampleRate
+    );
+
+  const key =
+    detectKey(
+      chroma
+    );
+
+  const confidence =
+    Math.min(
+      .98,
+      Math.max(
+        .40,
+        chroma.confidence*.65+
+        tempoConfidence(bpm)*.35
+      )
+    );
+
+  return {
+
+    bpm,
+
+    key,
+
+    meter:4,
+
+    confidence
+
+  };
+
+}
+
+
+/* =========================================================
+   TEMPO
+   ========================================================= */
+
+function estimateTempo(
+  data,
+  sampleRate
+){
+
+  const block =
+    Math.max(
+      1,
+      Math.floor(
+        sampleRate*.02
+      )
+    );
+
+  const envelope=[];
+
+  for(
+    let start=0;
+    start+block<data.length;
+    start+=block
+  ){
+
+    let sum=0;
+
+    for(
+      let i=0;
+      i<block;
+      i+=4
+    ){
+
+      const value =
+        data[start+i] || 0;
+
+      sum +=
+        value*value;
+
+    }
+
+    envelope.push(
+      Math.sqrt(
+        sum/
+        Math.max(
+          1,
+          block/4
+        )
+      )
+    );
+
+    /*
+      Limite CPU.
+    */
+
+    if(
+      envelope.length>12000
+    ){
+
+      break;
+
+    }
+
+  }
+
+  const minLag =
+    Math.max(
+      1,
+      Math.floor(
+        60/
+        (220*.02)
+      )
+    );
+
+  const maxLag =
+    Math.floor(
+      60/
+      (40*.02)
+    );
+
+  let bestLag =
+    minLag;
+
+  let bestScore =
+    -Infinity;
+
+  const usableMax =
+    Math.min(
+      maxLag,
+      Math.floor(
+        envelope.length/2
+      )
+    );
+
+  for(
+    let lag=minLag;
+    lag<=usableMax;
+    lag++
+  ){
+
+    let score=0;
+
+    for(
+      let i=lag;
+      i<envelope.length;
+      i++
+    ){
+
+      score +=
+        envelope[i]*
+        envelope[i-lag];
+
+    }
+
+    if(
+      score>bestScore
+    ){
+
+      bestScore =
+        score;
+
+      bestLag =
+        lag;
+
+    }
+
+  }
+
+  let bpm =
+    60/
+    (
+      bestLag*.02
+    );
+
+  while(
+    bpm<70
+  ){
+
+    bpm*=2;
+
+  }
+
+  while(
+    bpm>180
+  ){
+
+    bpm/=2;
+
+  }
+
+  return Math.round(
+    bpm
+  );
+
+}
+
+
+function tempoConfidence(bpm){
+
+  if(
+    bpm>=80 &&
+    bpm<=160
+  ){
+
+    return .8;
+
+  }
+
+  return .55;
+
+}
+
+
+/* =========================================================
+   CHROMA
+   ========================================================= */
+
+function estimateChroma(
+  data,
+  sampleRate
+){
+
+  const chroma =
+    new Float64Array(12);
+
+  const fftSize =
+    2048;
+
+  const hop =
+    1024;
+
+  const maxSamples =
+    Math.min(
+      data.length,
+      sampleRate*90
+    );
+
+  let frames=0;
+
+  for(
+    let start=0;
+    start+fftSize<maxSamples;
+    start+=hop
+  ){
+
+    const spectrum =
+      magnitudeSpectrum(
+        data,
+        start,
+        fftSize
+      );
+
+    for(
+      let bin=2;
+      bin<spectrum.length;
+      bin++
+    ){
+
+      const frequency =
+        bin*
+        sampleRate/
+        fftSize;
+
+      if(
+        frequency<55 ||
+        frequency>5000
+      ){
+
+        continue;
+
+      }
+
+      const midi =
+        69+
+        12*
+        Math.log2(
+          frequency/440
+        );
+
+      const note =
+        Math.round(midi)%12;
+
+      if(
+        note>=0 &&
+        note<12
+      ){
+
+        chroma[note] +=
+          spectrum[bin]/
+          Math.sqrt(
+            frequency
+          );
+
+      }
+
+    }
+
+    frames++;
+
+    /*
+      Protection CPU.
+    */
+
+    if(
+      frames>=250
+    ){
+
+      break;
+
+    }
+
+  }
+
+  let total=0;
+  let maximum=0;
+
+  for(
+    const value of chroma
+  ){
+
+    total+=value;
+
+    maximum =
+      Math.max(
+        maximum,
+        value
+      );
+
+  }
+
+  return {
+
+    values:chroma,
+
+    confidence:
+      total>0
+      ? Math.min(
+          1,
+          maximum/
+          total*
+          4
+        )
+      : .2
+
+  };
+
+}
+
+
+/* =========================================================
+   KEY DETECTION
+   ========================================================= */
+
+function detectKey(
+  chromaData
+){
+
+  const values =
+    Array.from(
+      chromaData.values
+    );
+
+  const majorProfile=[
+
+    6.35,
+    2.23,
+    3.48,
+    2.33,
+    4.38,
+    4.09,
+    2.52,
+    5.19,
+    2.39,
+    3.66,
+    2.29,
+    2.88
+
+  ];
+
+  const minorProfile=[
+
+    6.33,
+    2.68,
+    3.52,
+    5.38,
+    2.60,
+    3.53,
+    2.54,
+    4.75,
+    3.98,
+    2.69,
+    3.34,
+    3.17
+
+  ];
+
+  let best={
+    score:-Infinity,
+    root:0,
+    mode:"major"
+  };
+
+  for(
+    let root=0;
+    root<12;
+    root++
+  ){
+
+    for(
+      const [
+        profile,
+        mode
+      ]
+      of [
+        [majorProfile,"major"],
+        [minorProfile,"minor"]
+      ]
+    ){
+
+      let score=0;
+
+      for(
+        let i=0;
+        i<12;
+        i++
+      ){
+
+        score +=
+          values[
+            (i+root)%12
+          ]*
+          profile[i];
+
+      }
+
+      if(
+        score>best.score
+      ){
+
+        best={
+          score,
+          root,
+          mode
+        };
+
+      }
+
+    }
+
+  }
+
+  return (
+    NOTE_NAMES[best.root]
+    +
+    (
+      best.mode==="major"
+      ? " Majeur"
+      : " mineur"
+    )
+  );
+
+}
+
+
+/* =========================================================
+   SOURCE PANEL
+   ========================================================= */
+
+function renderSourcePanel(){
+
+  $("stems").innerHTML=`
+
+    <div class="stem">
+
+      <div>
+
+        <div class="stem-name">
+          AUDIO ORIGINAL
+        </div>
+
+        <div class="stem-info">
+          Source chargée dans le navigateur
+        </div>
+
+      </div>
+
+      <button
+        id="sourcePlay"
+        type="button"
+      >
+        ▶ PLAY
+      </button>
+
+    </div>
+
+    <div class="stem">
+
+      <div>
+
+        <div class="stem-name">
+          SÉPARATION MUSICALE
+        </div>
+
+        <div class="stem-info">
+          Module Demucs / ONNX / WebGPU
+        </div>
+
+      </div>
+
+      <button
+        id="separateBtn"
+        type="button"
+      >
+        ANALYSER
+      </button>
+
+    </div>
+
   `;
+
+  $("sourcePlay").onclick =
+    playOriginal;
+
+  $("separateBtn").onclick =
+    requestSeparation;
+
 }
+
+
+/* =========================================================
+   PLAY ORIGINAL
+   ========================================================= */
+
+async function playOriginal(){
+
+  if(!state.buffer){
+
+    toast(
+      "Charge d'abord un morceau."
+    );
+
+    return;
+
+  }
+
+  const context =
+    await getAudioContext();
+
+  if(
+    state.sourceNode
+  ){
+
+    try{
+
+      state.sourceNode.stop();
+
+    }catch{}
+
+  }
+
+  const source =
+    context.createBufferSource();
+
+  source.buffer =
+    state.buffer;
+
+  source.connect(
+    context.destination
+  );
+
+  source.start();
+
+  state.sourceNode =
+    source;
+
+  toast(
+    "Lecture…"
+  );
+
+}
+
+
+$("playBtn").onclick =
+  playOriginal;
+
+
+/* =========================================================
+   OPTIONAL SEPARATION
+   =========================================================
+
+   GitHub Pages ne fournit pas de serveur.
+
+   Ce bouton tente donc de contacter :
+
+      /api/separate
+
+   Si aucun backend n'existe, aucune fausse séparation
+   n'est affichée.
+   ========================================================= */
+
+async function requestSeparation(){
+
+  if(!state.buffer){
+
+    toast(
+      "Aucun audio chargé."
+    );
+
+    return;
+
+  }
+
+  setStatus(
+    $("sepDot"),
+    $("sepStatus"),
+    "Moteur de séparation…",
+    "busy"
+  );
+
+  try{
+
+    const response =
+      await fetch(
+        "/api/separate",
+        {
+          method:"POST"
+        }
+      );
+
+    if(
+      !response.ok
+    ){
+
+      throw new Error(
+        "Backend indisponible"
+      );
+
+    }
+
+    const result =
+      await response.json();
+
+    if(
+      !Array.isArray(
+        result.stems
+      )
+    ){
+
+      throw new Error(
+        "Réponse invalide"
+      );
+
+    }
+
+    renderSeparatedStems(
+      result.stems
+    );
+
+    setStatus(
+      $("sepDot"),
+      $("sepStatus"),
+      "Séparation terminée",
+      "ok"
+    );
+
+  }catch(error){
+
+    console.info(
+      error.message
+    );
+
+    setStatus(
+      $("sepDot"),
+      $("sepStatus"),
+      "Moteur de séparation non configuré"
+    );
+
+    toast(
+      "Demucs doit être branché à un backend pour cette fonction."
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   SEPARATED STEMS
+   ========================================================= */
+
+function renderSeparatedStems(
+  stems
+){
+
+  if(
+    !stems.length
+  ){
+
+    return;
+
+  }
+
+  $("stems").innerHTML =
+    stems.map(
+      (stem,index)=>`
+
+        <div class="stem">
+
+          <div>
+
+            <div class="stem-name">
+
+              ${escapeHTML(
+                stem.name ||
+                `STEM ${index+1}`
+              ).toUpperCase()}
+
+            </div>
+
+            <div class="stem-info">
+              Source séparée
+            </div>
+
+          </div>
+
+          <button
+            type="button"
+            data-stem="${escapeHTML(
+              stem.url || ""
+            )}"
+          >
+            ▶ SOLO
+          </button>
+
+        </div>
+
+      `
+    ).join("");
+
+  $("stems")
+    .querySelectorAll(
+      "[data-stem]"
+    )
+    .forEach(
+      button=>{
+
+        button.onclick =
+          async()=>{
+
+            const url =
+              button.dataset.stem;
+
+            if(!url){
+
+              return;
+
+            }
+
+            const audio =
+              new Audio(url);
+
+            await audio.play();
+
+          };
+
+      }
+    );
+
+}
+
+
+/* =========================================================
+   TRANSCRIPTION
+   ========================================================= */
+
+$("transcribeBtn").onclick =
+  transcribe;
+
 
 async function transcribe(){
-  toast("Transcription MT3 en cours...");
-  // SIMULATION - En prod : appel à @magenta/music MT3 via TensorFlow.js
-  // Ici on génère des notes réalistes pour la démo
-  allNotes=[
-    {pitch:65,start:0,dur:1,family:'strings'}, {pitch:69,start:0,dur:1,family:'strings'},
-    {pitch:62,start:1,dur:1,family:'brass'}, {pitch:67,start:2,dur:2,family:'woodwinds'},
-    {pitch:60,start:0,dur:4,family:'brass'}, {pitch:72,start:3,dur:1,family:'strings'}
-  ];
-  renderScore(allNotes);
-  toast("Partition prête");
-}
 
-function renderScore(notes){
-  const div=document.getElementById('osmd');
-  div.innerHTML=`<div style="color:#111;padding:20px" class="mono">
-  PARTITION GÉNÉRÉE — ${notes.length} notes orchestrales<br><br>
-  <span style="font-family:'Instrument Serif';font-size:28px">Allegro maestoso — Fa Majeur</span><br><br>
-  Système : 4 portées (Strings / Brass / Woodwinds / Perc)<br>
-  Cor en Mi → Cor en Fa : transposition -1/2 ton appliquée<br><br>
-  [Rendu OSMD complet avec MusicXML généré dynamiquement]<br>
-  </div>`;
-  // Vrai rendu OSMD si tu charges un MusicXML
-  // const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(div);
-  // osmd.load("partition_complete.musicxml").then(()=>osmd.render());
-}
+  if(!state.buffer){
 
-// EXPORTS PRO
-function exportMusicXML(){
-  let xml=`<?xml version="1.0"?><score-partwise><part-list><score-part id="P1"><part-name>Orchestra</part-name></score-part></part-list><part id="P1">`;
-  allNotes.forEach(n=>{
-    xml+=`<measure><note><pitch><step>${'CDEFGAB'[n.pitch%12%7]}</step><octave>${Math.floor(n.pitch/12)-1}</octave></pitch><duration>${n.dur*4}</duration></note></measure>`;
-  });
-  xml+=`</part></score-partwise>`;
-  download(xml,"partition_complete.musicxml","text/xml");
-}
-function exportMIDI(){toast("MIDI exporté - ouvre dans MuseScore");}
+    toast(
+      "Charge d'abord un morceau."
+    );
 
-function download(content,name,type){const b=new Blob([content],{type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click()}
-function toast(t){const s=document.getElementById('status');s.innerText=t;s.style.display='block';setTimeout(()=>s.style.display='none',3000)}
+    return;
 
-document.getElementById('transposeBtn').onclick=()=>{
-  allNotes=allNotes.map(n=>({...n,pitch:n.pitch-1}));
-  renderScore(allNotes);
-  toast("Transposé : Cor en Mi → Cor en Fa (- seconde mineure)");
-}
-// --- MODULE HUMMING QBH - Reconnaissance fredonnement ---
-class HummingEngine {
-  async init(){
-    this.pitchModel = await ml5.pitchDetection('https://cdn.jsdelivr.net/gh/ml5js/ml5-data@main/models/pitch-detection/crepe/');
   }
-  
-  // 1. Voix -> Mélodie (même si tu fredonnes faux)
-  async audioToMelody(audioBuffer){
-    const pitches = [];
-    // CREPE extrait la fréquence fondamentale de ta voix image par image
-    const hop = 0.05; // 50ms
-    for(let t=0; t<audioBuffer.duration; t+=hop){
-      const f0 = await this.getF0(audioBuffer, t);
-      if(f0 > 80 && f0 < 1000){ // voix humaine
-        pitches.push({time:t, freq:f0, note: this.freqToMidi(f0)});
-      }
+
+  setStatus(
+    $("transDot"),
+    $("transStatus"),
+    "Transcription en cours…",
+    "busy"
+  );
+
+  setProgress(
+    3
+  );
+
+  try{
+
+    /*
+      Première possibilité :
+      véritable moteur distant.
+
+      Endpoint facultatif :
+
+        POST /api/transcribe
+
+      Réponse :
+
+        {
+          "notes":[
+            {
+              "pitch":60,
+              "start":0,
+              "dur":1,
+              "velocity":90
+            }
+          ]
+        }
+    */
+
+    const advanced =
+      await tryAdvancedTranscription();
+
+    if(
+      advanced &&
+      Array.isArray(
+        advanced.notes
+      ) &&
+      advanced.notes.length
+    ){
+
+      state.notes =
+        normalizeNotes(
+          advanced.notes
+        );
+
+    }else{
+
+      /*
+        Fallback local.
+
+        Il est particulièrement adapté
+        à une mélodie monophonique / voix / instrument solo.
+      */
+
+      state.notes =
+        await transcribeMonophonic(
+          state.buffer
+        );
+
     }
-    // On lisse pour enlever ton vibrato / fausses notes
-    return this.smoothContour(pitches);
+
+    setProgress(
+      100
+    );
+
+    renderScore(
+      state.notes
+    );
+
+    setStatus(
+      $("transDot"),
+      $("transStatus"),
+      `${state.notes.length} notes détectées`,
+      "ok"
+    );
+
+    toast(
+      `Transcription terminée · ${state.notes.length} notes`
+    );
+
+    setTimeout(
+      ()=>{
+        setProgress(
+          0,
+          false
+        );
+      },
+      500
+    );
+
+  }catch(error){
+
+    console.error(error);
+
+    setStatus(
+      $("transDot"),
+      $("transStatus"),
+      "Erreur de transcription",
+      "error"
+    );
+
+    setProgress(
+      0,
+      false
+    );
+
+    toast(
+      "La transcription a échoué."
+    );
+
   }
 
-  // 2. Voix -> Paroles (même fredonné)
-  async audioToLyrics(audioBuffer){
-    // Whisper tiny en WebAssembly, tourne 100% offline
-    const whisper = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0');
-    const transcriber = await whisper.pipeline('automatic-speech-recognition','Xenova/whisper-tiny');
-    const text = await transcriber(audioBuffer, {language:'fr', task:'transcribe'});
-    return text.text; // ex: "ta ta ta la vaisselle"
-  }
-
-  // 3. Matching mélodique (DTW)
-  matchHummedMelody(hummedNotes, database){
-    // On compare le CONTOUR mélodique, pas les notes exactes
-    // U D S = Up Down Same. C'est comme ça que SoundHound fait
-    const contour = hummedNotes.map((n,i,a)=> i==0 ? 'S' : n.note > a[i-1].note ? 'U' : n.note < a[i-1].note ? 'D' : 'S').join('');
-    // Dynamic Time Warping contre ta base de 10k BO
-    // Même si tu fredonnes à 70% faux, ça matche
-    return database.findBest(contour);
-  }
-
-  freqToMidi(f){ return 69 + 12*Math.log2(f/440) }
-  smoothContour(p){ /* médiane glissante */ return p }
-  async getF0(buf, t){ return 440 } // remplacé par CREPE
 }
 
-// --- UI pour le fredonnement ---
-async function enableHumming(){
-  const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-  const recorder = new MediaRecorder(stream);
-  let chunks=[];
-  recorder.ondataavailable=e=>chunks.push(e.data);
-  recorder.onstop=async ()=>{
-    const blob = new Blob(chunks,{type:'audio/webm'});
-    const ab = await blob.arrayBuffer();
-    const buf = await AudioCtx.decodeAudioData(ab);
-    
-    toast("Analyse de ton fredonnement...");
-    const engine = new HummingEngine();
-    const melody = await engine.audioToMelody(buf);
-    const lyrics = await engine.audioToLyrics(buf);
-    
-    document.getElementById('match').innerText = `Fredonnement: ${melody.length} notes | "${lyrics}"`;
-    // Et ensuite on lance la transcription orchestrale normale
-    transcribe();
+
+/* =========================================================
+   ADVANCED TRANSCRIPTION HOOK
+   ========================================================= */
+
+async function tryAdvancedTranscription(){
+
+  try{
+
+    const response =
+      await fetch(
+        "/api/transcribe",
+        {
+          method:"POST"
+        }
+      );
+
+    if(
+      !response.ok
+    ){
+
+      return null;
+
+    }
+
+    return await response.json();
+
+  }catch{
+
+    return null;
+
+  }
+
+}
+
+
+/* =========================================================
+   LOCAL TRANSCRIPTION
+   ========================================================= */
+
+async function transcribeMonophonic(
+  buffer
+){
+
+  const data =
+    getMono(buffer);
+
+  const sampleRate =
+    buffer.sampleRate;
+
+  const frame =
+    Math.floor(
+      sampleRate*.09
+    );
+
+  const hop =
+    Math.floor(
+      sampleRate*.045
+    );
+
+  const raw=[];
+
+  const maximumFrames =
+    Math.min(
+      Math.floor(
+        (data.length-frame)/hop
+      ),
+      5000
+    );
+
+  for(
+    let frameIndex=0;
+    frameIndex<maximumFrames;
+    frameIndex++
+  ){
+
+    const offset =
+      frameIndex*hop;
+
+    const pitch =
+      detectPitchYIN(
+        data,
+        offset,
+        frame,
+        sampleRate
+      );
+
+    raw.push({
+
+      time:
+        offset/sampleRate,
+
+      midi:
+        pitch
+
+    });
+
+    if(
+      frameIndex%15===0
+    ){
+
+      setProgress(
+        10+
+        (
+          frameIndex/
+          maximumFrames
+        )*
+        80
+      );
+
+      await nextFrame();
+
+    }
+
+  }
+
+  return quantizePitchContour(
+    raw,
+    state.analysis?.bpm || 100
+  );
+
+}
+
+
+/* =========================================================
+   YIN PITCH DETECTION
+   ========================================================= */
+
+function detectPitchYIN(
+  data,
+  start,
+  size,
+  sampleRate
+){
+
+  const minFrequency =
+    65;
+
+  const maxFrequency =
+    1200;
+
+  const minTau =
+    Math.floor(
+      sampleRate/
+      maxFrequency
+    );
+
+  const maxTau =
+    Math.min(
+      Math.floor(
+        sampleRate/
+        minFrequency
+      ),
+      Math.floor(
+        size/2
+      )-1
+    );
+
+  const difference =
+    new Float32Array(
+      maxTau+1
+    );
+
+  for(
+    let tau=minTau;
+    tau<=maxTau;
+    tau++
+  ){
+
+    let sum=0;
+
+    for(
+      let i=0;
+      i<size/2;
+      i+=2
+    ){
+
+      const a =
+        data[start+i] || 0;
+
+      const b =
+        data[start+i+tau] || 0;
+
+      const differenceValue =
+        a-b;
+
+      sum +=
+        differenceValue*
+        differenceValue;
+
+    }
+
+    difference[tau]=
+      sum;
+
+  }
+
+  let running=0;
+
+  let bestTau=-1;
+
+  let bestValue=
+    Infinity;
+
+  for(
+    let tau=minTau;
+    tau<=maxTau;
+    tau++
+  ){
+
+    running +=
+      difference[tau];
+
+    const normalized =
+      running===0
+      ? 1
+      : (
+        difference[tau]*
+        tau/
+        running
+      );
+
+    if(
+      tau>minTau+2 &&
+      normalized<.18 &&
+      normalized<bestValue
+    ){
+
+      bestValue =
+        normalized;
+
+      bestTau =
+        tau;
+
+    }
+
+  }
+
+  if(
+    bestTau<0
+  ){
+
+    return null;
+
+  }
+
+  /*
+    Energy gate.
+  */
+
+  let energy=0;
+
+  for(
+    let i=0;
+    i<size;
+    i+=4
+  ){
+
+    const value =
+      data[start+i] || 0;
+
+    energy +=
+      value*value;
+
+  }
+
+  energy /=
+    Math.max(
+      1,
+      Math.floor(
+        size/4
+      )
+    );
+
+  if(
+    energy<1e-5
+  ){
+
+    return null;
+
+  }
+
+  const frequency =
+    sampleRate/
+    bestTau;
+
+  if(
+    frequency<65 ||
+    frequency>1200
+  ){
+
+    return null;
+
+  }
+
+  return (
+    69+
+    12*
+    Math.log2(
+      frequency/440
+    )
+  );
+
+}
+
+
+/* =========================================================
+   QUANTIZATION
+   ========================================================= */
+
+function quantizePitchContour(
+  raw,
+  bpm
+){
+
+  const cleaned=[];
+
+  let previous=null;
+
+  for(
+    const frame of raw
+  ){
+
+    if(
+      frame.midi===null ||
+      !Number.isFinite(
+        frame.midi
+      )
+    ){
+
+      continue;
+
+    }
+
+    const midi =
+      Math.round(
+        frame.midi
+      );
+
+    if(
+      midi<24 ||
+      midi>108
+    ){
+
+      continue;
+
+    }
+
+    /*
+      Ignore les sauts totalement improbables.
+    */
+
+    if(
+      previous!==null &&
+      Math.abs(
+        midi-previous
+      )>12
+    ){
+
+      continue;
+
+    }
+
+    cleaned.push({
+
+      time:
+        frame.time,
+
+      midi
+
+    });
+
+    previous =
+      midi;
+
+  }
+
+  if(
+    !cleaned.length
+  ){
+
+    return [];
+
+  }
+
+  const notes=[];
+
+  let current={
+
+    pitch:
+      cleaned[0].midi,
+
+    start:
+      cleaned[0].time,
+
+    end:
+      cleaned[0].time
+
   };
-  recorder.start();
-  setTimeout(()=>recorder.stop(), 5000); // 5 sec de fredonnement
+
+  for(
+    let i=1;
+    i<cleaned.length;
+    i++
+  ){
+
+    const point =
+      cleaned[i];
+
+    const gap =
+      point.time-
+      current.end;
+
+    if(
+      point.midi===
+      current.pitch &&
+      gap<.18
+    ){
+
+      current.end =
+        point.time;
+
+    }else{
+
+      if(
+        current.end-
+        current.start>=.10
+      ){
+
+        notes.push({
+
+          pitch:
+            current.pitch,
+
+          start:
+            current.start,
+
+          dur:
+            Math.max(
+              .10,
+              current.end-
+              current.start
+            ),
+
+          velocity:90
+
+        });
+
+      }
+
+      current={
+
+        pitch:
+          point.midi,
+
+        start:
+          point.time,
+
+        end:
+          point.time
+
+      };
+
+    }
+
+  }
+
+  if(
+    current.end-
+    current.start>=.10
+  ){
+
+    notes.push({
+
+      pitch:
+        current.pitch,
+
+      start:
+        current.start,
+
+      dur:
+        Math.max(
+          .10,
+          current.end-
+          current.start
+        ),
+
+      velocity:90
+
+    });
+
+  }
+
+  /*
+    Quantification rythmique.
+  */
+
+  const beat =
+    60/
+    Math.max(
+      30,
+      bpm
+    );
+
+  const grid =
+    beat/4;
+
+  return notes.map(
+    note=>{
+
+      const start =
+        Math.round(
+          note.start/grid
+        )*
+        grid;
+
+      const end =
+        Math.max(
+          start+grid,
+          Math.round(
+            (
+              note.start+
+              note.dur
+            )/
+            grid
+          )*
+          grid
+        );
+
+      return {
+
+        pitch:
+          note.pitch,
+
+        start,
+
+        dur:
+          end-start,
+
+        velocity:
+          note.velocity
+
+      };
+
+    }
+  );
+
 }
+
+
+/* =========================================================
+   NORMALIZE ADVANCED NOTES
+   ========================================================= */
+
+function normalizeNotes(
+  notes
+){
+
+  return notes
+
+    .filter(
+      note=>
+        Number.isFinite(
+          note.pitch
+        ) &&
+        Number.isFinite(
+          note.start
+        ) &&
+        Number.isFinite(
+          note.dur
+        )
+    )
+
+    .map(
+      note=>({
+
+        pitch:
+          Math.round(
+            note.pitch
+          ),
+
+        start:
+          Math.max(
+            0,
+            note.start
+          ),
+
+        dur:
+          Math.max(
+            .05,
+            note.dur
+          ),
+
+        velocity:
+          Number.isFinite(
+            note.velocity
+          )
+          ? note.velocity
+          : 90
+
+      })
+    )
+
+    .sort(
+      (a,b)=>
+        a.start-b.start ||
+        a.pitch-b.pitch
+    );
+
+}
+
+
+/* =========================================================
+   SCORE
+   ========================================================= */
+
+function renderScore(
+  notes
+){
+
+  const container =
+    $("scoreCanvas");
+
+  if(
+    !notes.length
+  ){
+
+    container.className =
+      "score-empty";
+
+    container.innerHTML =
+      "Aucune note suffisamment fiable détectée.";
+
+    return;
+
+  }
+
+  container.className="";
+  container.innerHTML="";
+
+  const canvas =
+    document.createElement(
+      "canvas"
+    );
+
+  canvas.width =
+    Math.max(
+      1000,
+      Math.min(
+        2600,
+        700+
+        notes.length*36
+      )
+    );
+
+  canvas.height =
+    430;
+
+  canvas.style.width =
+    "100%";
+
+  canvas.style.height =
+    "430px";
+
+  container.appendChild(
+    canvas
+  );
+
+  drawNotation(
+    canvas,
+    notes
+  );
+
+}
+
+
+/* =========================================================
+   SIMPLE MUSIC NOTATION
+   ========================================================= */
+
+function drawNotation(
+  canvas,
+  notes
+){
+
+  const context =
+    canvas.getContext("2d");
+
+  context.fillStyle =
+    "#fffdf8";
+
+  context.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  const margin =
+    65;
+
+  const staffTop =
+    110;
+
+  const staffSpacing =
+    18;
+
+  /*
+    Header.
+  */
+
+  context.fillStyle =
+    "#333";
+
+  context.font =
+    "700 12px JetBrains Mono";
+
+  context.fillText(
+    state.analysis
+      ? `${state.analysis.key} · ${state.analysis.bpm} BPM`
+      : "Transcription",
+    margin,
+    27
+  );
+
+  context.font =
+    "italic 22px Instrument Serif";
+
+  context.fillText(
+    "ORCHESTRAi",
+    margin,
+    58
+  );
+
+  /*
+    Staff.
+  */
+
+  context.strokeStyle =
+    "#222";
+
+  context.lineWidth=1;
+
+  for(
+    let line=0;
+    line<5;
+    line++
+  ){
+
+    const y =
+      staffTop+
+      line*
+      staffSpacing;
+
+    context.beginPath();
+
+    context.moveTo(
+      margin,
+      y
+    );
+
+    context.lineTo(
+      canvas.width-30,
+      y
+    );
+
+    context.stroke();
+
+  }
+
+  /*
+    Treble clef.
+  */
+
+  context.fillStyle =
+    "#111";
+
+  context.font =
+    "58px serif";
+
+  context.fillText(
+    "𝄞",
+    18,
+    staffTop+42
+  );
+
+  /*
+    Positionnement des notes.
+
+    C4 = ligne/position centrale approximative.
+  */
+
+  const pixelsPerSecond =
+    95;
+
+  const systemWidth =
+    canvas.width-
+    margin-
+    35;
+
+  const durationPerSystem =
+    systemWidth/
+    pixelsPerSecond;
+
+  for(
+    const note of notes
+  ){
+
+    const system =
+      Math.floor(
+        note.start/
+        durationPerSystem
+      );
+
+    const localTime =
+      note.start-
+      system*
+      durationPerSystem;
+
+    const x =
+      margin+
+      localTime*
+      pixelsPerSecond;
+
+    /*
+      Hauteur graphique.
+    */
+
+    const semitones =
+      note.pitch-60;
+
+    const rawY =
+      staffTop+
+      4*
+      staffSpacing-
+      semitones*
+      3.0;
+
+    /*
+      Chaque système est ramené sur une portée.
+    */
+
+    const y =
+      (
+        (
+          rawY-
+          staffTop
+        )%140+
+        140
+      )%140+
+      staffTop;
+
+    /*
+      Note head.
+    */
+
+    context.beginPath();
+
+    context.ellipse(
+      x,
+      y,
+      8,
+      5.5,
+      -0.25,
+      0,
+      Math.PI*2
+    );
+
+    context.fillStyle =
+      "#111";
+
+    context.fill();
+
+    /*
+      Stem.
+    */
+
+    context.strokeStyle =
+      "#111";
+
+    context.lineWidth =
+      1.5;
+
+    context.beginPath();
+
+    context.moveTo(
+      x+7,
+      y
+    );
+
+    context.lineTo(
+      x+7,
+      y-34
+    );
+
+    context.stroke();
+
+    /*
+      Nom de note si peu de notes.
+    */
+
+    if(
+      notes.length<=45
+    ){
+
+      context.font =
+        "9px JetBrains Mono";
+
+      context.fillStyle =
+        "#666";
+
+      context.fillText(
+        midiName(
+          note.pitch
+        ),
+        x-10,
+        Math.min(
+          canvas.height-15,
+          y+38
+        )
+      );
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   MIDI EXPORT
+   ========================================================= */
+
+$("midiBtn").onclick =
+  exportMIDI;
+
+
+function exportMIDI(){
+
+  if(
+    !state.notes.length
+  ){
+
+    toast(
+      "Aucune note à exporter."
+    );
+
+    return;
+
+  }
+
+  const bpm =
+    state.analysis?.bpm ||
+    120;
+
+  const bytes =
+    createMIDI(
+      state.notes,
+      bpm
+    );
+
+  downloadBytes(
+    bytes,
+    "orchestrai-transcription.mid",
+    "audio/midi"
+  );
+
+  toast(
+    "MIDI exporté."
+  );
+
+}
+
+
+/* =========================================================
+   MIDI GENERATOR
+   ========================================================= */
+
+function createMIDI(
+  notes,
+  bpm
+){
+
+  const PPQ =
+    480;
+
+  const beatSeconds =
+    60/bpm;
+
+  const events=[];
+
+  for(
+    const note of notes
+  ){
+
+    const pitch =
+      Math.max(
+        0,
+        Math.min(
+          127,
+          Math.round(
+            note.pitch
+          )
+        )
+      );
+
+    const start =
+      Math.max(
+        0,
+        Math.round(
+          note.start/
+          beatSeconds*
+          PPQ
+        )
+      );
+
+    const end =
+      Math.max(
+        start+1,
+        Math.round(
+          (
+            note.start+
+            note.dur
+          )/
+          beatSeconds*
+          PPQ
+        )
+      );
+
+    const velocity =
+      Math.max(
+        1,
+        Math.min(
+          127,
+          Math.round(
+            note.velocity||
+            90
+          )
+        )
+      );
+
+    events.push({
+
+      tick:
+        start,
+
+      type:
+        "on",
+
+      pitch,
+
+      velocity
+
+    });
+
+    events.push({
+
+      tick:
+        end,
+
+      type:
+        "off",
+
+      pitch,
+
+      velocity:0
+
+    });
+
+  }
+
+  events.sort(
+    (a,b)=>
+      a.tick-b.tick ||
+      (
+        a.type==="off"
+        ? -1
+        : 1
+      )
+  );
+
+  const track=[];
+
+  /*
+    Tempo event.
+  */
+
+  const microseconds =
+    Math.round(
+      60000000/bpm
+    );
+
+  track.push(
+    0x00,
+    0xff,
+    0x51,
+    0x03,
+    ...int24(
+      microseconds
+    )
+  );
+
+  let previous=0;
+
+  for(
+    const event of events
+  ){
+
+    const delta =
+      event.tick-
+      previous;
+
+    track.push(
+      ...vlq(delta)
+    );
+
+    track.push(
+      0x90,
+      event.pitch,
+      event.type==="on"
+        ? event.velocity
+        : 0
+    );
+
+    previous =
+      event.tick;
+
+  }
+
+  /*
+    End of track.
+  */
+
+  track.push(
+    0x00,
+    0xff,
+    0x2f,
+    0x00
+  );
+
+  /*
+    MIDI header.
+  */
+
+  const header=[
+
+    0x4d,
+    0x54,
+    0x68,
+    0x64,
+
+    0x00,
+    0x00,
+    0x00,
+    0x06,
+
+    0x00,
+    0x00,
+
+    0x00,
+    0x01,
+
+    (PPQ>>8)&255,
+    PPQ&255
+
+  ];
+
+  const trackHeader=[
+
+    0x4d,
+    0x54,
+    0x72,
+    0x6b,
+
+    ...uint32(
+      track.length
+    )
+
+  ];
+
+  return new Uint8Array([
+
+    ...header,
+
+    ...trackHeader,
+
+    ...track
+
+  ]);
+
+}
+
+
+/* =========================================================
+   MIDI HELPERS
+   ========================================================= */
+
+function vlq(value){
+
+  let buffer =
+    value&0x7f;
+
+  const result=[];
+
+  while(
+    (value>>=7)
+  ){
+
+    buffer<<=8;
+
+    buffer |=
+      (
+        value&
+        0x7f
+      )|
+      0x80;
+
+  }
+
+  while(true){
+
+    result.push(
+      buffer&0xff
+    );
+
+    if(
+      buffer&0x80
+    ){
+
+      buffer>>=8;
+
+    }else{
+
+      break;
+
+    }
+
+  }
+
+  return result;
+
+}
+
+
+function uint32(value){
+
+  return [
+
+    (value>>>24)&255,
+    (value>>>16)&255,
+    (value>>>8)&255,
+    value&255
+
+  ];
+
+}
+
+
+function int24(value){
+
+  return [
+
+    (value>>>16)&255,
+    (value>>>8)&255,
+    value&255
+
+  ];
+
+}
+
+
+/* =========================================================
+   MUSICXML
+   ========================================================= */
+
+$("xmlBtn").onclick =
+  exportMusicXML;
+
+
+function exportMusicXML(){
+
+  if(
+    !state.notes.length
+  ){
+
+    toast(
+      "Aucune note à exporter."
+    );
+
+    return;
+
+  }
+
+  const xml =
+    createMusicXML(
+      state.notes,
+      state.analysis
+    );
+
+  download(
+    xml,
+    "orchestrai-transcription.musicxml",
+    "application/vnd.recordare.musicxml+xml"
+  );
+
+  toast(
+    "MusicXML exporté."
+  );
+
+}
+
+
+/* =========================================================
+   MUSICXML GENERATOR
+   ========================================================= */
+
+function createMusicXML(
+  notes,
+  analysis
+){
+
+  const bpm =
+    analysis?.bpm ||
+    120;
+
+  const divisions =
+    4;
+
+  const beatSeconds =
+    60/bpm;
+
+  const measureSeconds =
+    beatSeconds*4;
+
+  const maximumTime =
+    notes.reduce(
+      (
+        max,
+        note
+      )=>
+        Math.max(
+          max,
+          note.start+
+          note.dur
+        ),
+      0
+    );
+
+  const measureCount =
+    Math.max(
+      1,
+      Math.ceil(
+        maximumTime/
+        measureSeconds
+      )
+    );
+
+  let measures="";
+
+  for(
+    let measureIndex=0;
+    measureIndex<measureCount;
+    measureIndex++
+  ){
+
+    const start =
+      measureIndex*
+      measureSeconds;
+
+    const end =
+      start+
+      measureSeconds;
+
+    const measureNotes =
+      notes.filter(
+        note=>
+          note.start>=start &&
+          note.start<end
+      );
+
+    measures += `
+
+      <measure number="${measureIndex+1}">
+
+        ${
+          measureIndex===0
+          ? `
+          <attributes>
+
+            <divisions>
+              ${divisions}
+            </divisions>
+
+            <key>
+
+              <fifths>
+                ${keyToFifths(
+                  analysis?.key
+                )}
+              </fifths>
+
+              <mode>
+                ${
+                  analysis?.key?.includes(
+                    "mineur"
+                  )
+                  ? "minor"
+                  : "major"
+                }
+              </mode>
+
+            </key>
+
+            <time>
+
+              <beats>4</beats>
+
+              <beat-type>
+                4
+              </beat-type>
+
+            </time>
+
+            <clef>
+
+              <sign>G</sign>
+
+              <line>2</line>
+
+            </clef>
+
+          </attributes>
+          `
+          : ""
+        }
+
+        ${
+          measureNotes
+            .map(
+              note=>
+                musicXMLNote(
+                  note,
+                  start,
+                  beatSeconds,
+                  divisions
+                )
+            )
+            .join("")
+        }
+
+      </measure>
+
+    `;
+
+  }
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE score-partwise PUBLIC
+  "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
+  "https://www.musicxml.com/dtds/partwise.dtd"
+>
+
+<score-partwise version="4.0">
+
+  <work>
+
+    <work-title>
+      ORCHESTRAi Transcription
+    </work-title>
+
+  </work>
+
+  <identification>
+
+    <creator type="software">
+      ORCHESTRAi
+    </creator>
+
+  </identification>
+
+  <part-list>
+
+    <score-part id="P1">
+
+      <part-name>
+        Melody
+      </part-name>
+
+    </score-part>
+
+  </part-list>
+
+  <part id="P1">
+
+    ${measures}
+
+  </part>
+
+</score-partwise>`;
+
+}
+
+
+/* =========================================================
+   MUSICXML NOTE
+   ========================================================= */
+
+function musicXMLNote(
+  note,
+  measureStart,
+  beatSeconds,
+  divisions
+){
+
+  const duration =
+    Math.max(
+      1,
+      Math.round(
+        note.dur/
+        beatSeconds*
+        divisions
+      )
+    );
+
+  const pitch =
+    Math.round(
+      note.pitch
+    );
+
+  const pitchData =
+    midiToMusicXMLPitch(
+      pitch%12
+    );
+
+  const octave =
+    Math.floor(
+      pitch/12
+    )-1;
+
+  return `
+
+    <note>
+
+      <pitch>
+
+        <step>
+          ${pitchData.step}
+        </step>
+
+        ${
+          pitchData.alter!==0
+          ? `
+            <alter>
+              ${pitchData.alter}
+            </alter>
+          `
+          : ""
+        }
+
+        <octave>
+          ${octave}
+        </octave>
+
+      </pitch>
+
+      <duration>
+        ${duration}
+      </duration>
+
+      <voice>
+        1
+      </voice>
+
+      <type>
+        ${durationToType(
+          duration
+        )}
+      </type>
+
+    </note>
+
+  `;
+
+}
+
+
+/* =========================================================
+   MUSICXML DURATION
+   ========================================================= */
+
+function durationToType(
+  duration
+){
+
+  if(duration>=16)
+    return "whole";
+
+  if(duration>=8)
+    return "half";
+
+  if(duration>=4)
+    return "quarter";
+
+  if(duration>=2)
+    return "eighth";
+
+  return "16th";
+
+}
+
+
+/* =========================================================
+   MIDI → MUSICXML
+   ========================================================= */
+
+function midiToMusicXMLPitch(
+  pitchClass
+){
+
+  const table=[
+
+    ["C",0],
+    ["C",1],
+    ["D",0],
+    ["E",-1],
+    ["E",0],
+    ["F",0],
+    ["F",1],
+    ["G",0],
+    ["A",-1],
+    ["A",0],
+    ["B",-1],
+    ["B",0]
+
+  ];
+
+  return {
+
+    step:
+      table[pitchClass][0],
+
+    alter:
+      table[pitchClass][1]
+
+  };
+
+}
+
+
+/* =========================================================
+   KEY → FIFTHS
+   ========================================================= */
+
+function keyToFifths(
+  key
+){
+
+  const map={
+
+    "C Majeur":0,
+    "G Majeur":1,
+    "D Majeur":2,
+    "A Majeur":3,
+    "E Majeur":4,
+    "B Majeur":5,
+    "F♯ Majeur":6,
+    "C♯ Majeur":7,
+
+    "F Majeur":-1,
+    "B♭ Majeur":-2,
+    "E♭ Majeur":-3,
+    "A♭ Majeur":-4,
+    "D♭ Majeur":-5,
+    "G♭ Majeur":-6,
+    "C♭ Majeur":-7,
+
+    "A mineur":0,
+    "E mineur":1,
+    "B mineur":2,
+    "F♯ mineur":3,
+    "C♯ mineur":4,
+    "G♯ mineur":5,
+    "D♯ mineur":6,
+    "A♯ mineur":7,
+
+    "D mineur":-1,
+    "G mineur":-2,
+    "C mineur":-3,
+    "F mineur":-4,
+    "B♭ mineur":-5,
+    "E♭ mineur":-6,
+    "A♭ mineur":-7
+
+  };
+
+  return (
+    map[key] ??
+    0
+  );
+
+}
+
+
+/* =========================================================
+   HUMMING
+   ========================================================= */
+
+$("humBtn").onclick =
+  recordHumming;
+
+$("recordBtn").onclick =
+  recordHumming;
+
+
+async function recordHumming(){
+
+  if(
+    state.recording
+  ){
+
+    return;
+
+  }
+
+  if(
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.getUserMedia
+  ){
+
+    toast(
+      "Le microphone n'est pas disponible."
+    );
+
+    return;
+
+  }
+
+  try{
+
+    const stream =
+      await navigator
+        .mediaDevices
+        .getUserMedia({
+
+          audio:{
+
+            channelCount:1,
+
+            echoCancellation:true,
+
+            noiseSuppression:true,
+
+            autoGainControl:true
+
+          }
+
+        });
+
+    const mimeType =
+      MediaRecorder.isTypeSupported(
+        "audio/webm;codecs=opus"
+      )
+      ? "audio/webm;codecs=opus"
+      : "";
+
+    const recorder =
+      mimeType
+      ? new MediaRecorder(
+          stream,
+          {
+            mimeType
+          }
+        )
+      : new MediaRecorder(
+          stream
+        );
+
+    state.recorder =
+      recorder;
+
+    state.recordingChunks =
+      [];
+
+    state.recording =
+      true;
+
+    $("recordBtn").textContent =
+      "● ENREGISTREMENT…";
+
+    $("humBtn").textContent =
+      "● ÉCOUTE…";
+
+    recorder.ondataavailable =
+      event=>{
+
+        if(
+          event.data.size
+        ){
+
+          state.recordingChunks.push(
+            event.data
+          );
+
+        }
+
+      };
+
+    recorder.onstop =
+      async()=>{
+
+        stream
+          .getTracks()
+          .forEach(
+            track=>
+              track.stop()
+          );
+
+        state.recording =
+          false;
+
+        $("recordBtn").textContent =
+          "● ENREGISTRER 8 S";
+
+        $("humBtn").textContent =
+          "🎙 FREDONNER";
+
+        try{
+
+          const blob =
+            new Blob(
+              state.recordingChunks,
+              {
+                type:
+                  recorder.mimeType ||
+                  "audio/webm"
+              }
+            );
+
+          const arrayBuffer =
+            await blob.arrayBuffer();
+
+          const context =
+            await getAudioContext();
+
+          const buffer =
+            await context
+              .decodeAudioData(
+                arrayBuffer
+              );
+
+          toast(
+            "Analyse du fredonnement…"
+          );
+
+          const result =
+            await analyzeHumming(
+              buffer
+            );
+
+          state.humming =
+            result;
+
+          $("hummingResult")
+            .textContent =
+              [
+
+                `Notes détectées : ${result.notes.length}`,
+
+                `Contour : ${result.contour || "—"}`,
+
+                `Ambitus : ${result.range || "—"}`,
+
+                `Centre mélodique : ${result.center || "—"}`,
+
+                "",
+
+                "Le contour est indépendant de la tonalité :",
+
+                "la même mélodie peut donc être fredonnée",
+
+                "plus haut ou plus bas."
+
+              ].join("\n");
+
+          if(
+            result.notes.length
+          ){
+
+            state.notes =
+              result.notes;
+
+            renderScore(
+              state.notes
+            );
+
+            toast(
+              "Mélodie extraite."
+            );
+
+          }else{
+
+            toast(
+              "Aucune mélodie suffisamment claire."
+            );
+
+          }
+
+        }catch(error){
+
+          console.error(
+            error
+          );
+
+          toast(
+            "Impossible d'analyser le fredonnement."
+          );
+
+        }
+
+      };
+
+    recorder.start();
+
+    toast(
+      "Fredonne naturellement pendant 8 secondes."
+    );
+
+    setTimeout(
+      ()=>{
+
+        if(
+          recorder.state===
+          "recording"
+        ){
+
+          recorder.stop();
+
+        }
+
+      },
+      8000
+    );
+
+  }catch(error){
+
+    console.error(
+      error
+    );
+
+    toast(
+      "Autorisation microphone refusée."
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   HUMMING ANALYSIS
+   ========================================================= */
+
+async function analyzeHumming(
+  buffer
+){
+
+  const data =
+    getMono(buffer);
+
+  const sampleRate =
+    buffer.sampleRate;
+
+  const frame =
+    Math.floor(
+      sampleRate*.09
+    );
+
+  const hop =
+    Math.floor(
+      sampleRate*.045
+    );
+
+  const raw=[];
+
+  for(
+    let start=0;
+    start+frame<data.length;
+    start+=hop
+  ){
+
+    const pitch =
+      detectPitchYIN(
+        data,
+        start,
+        frame,
+        sampleRate
+      );
+
+    if(
+      pitch!==null
+    ){
+
+      raw.push({
+
+        time:
+          start/sampleRate,
+
+        midi:
+          pitch
+
+      });
+
+    }
+
+    if(
+      raw.length%15===0
+    ){
+
+      await nextFrame();
+
+    }
+
+  }
+
+  const notes =
+    quantizePitchContour(
+      raw,
+      100
+    );
+
+  let contour="";
+
+  for(
+    let i=0;
+    i<notes.length;
+    i++
+  ){
+
+    if(i===0){
+
+      contour+="S";
+
+      continue;
+
+    }
+
+    const difference =
+      notes[i].pitch-
+      notes[i-1].pitch;
+
+    if(
+      difference>=2
+    ){
+
+      contour+="U";
+
+    }else if(
+      difference<=-2
+    ){
+
+      contour+="D";
+
+    }else{
+
+      contour+="S";
+
+    }
+
+  }
+
+  let range="—";
+
+  let center="—";
+
+  if(
+    notes.length
+  ){
+
+    const pitches =
+      notes.map(
+        note=>note.pitch
+      );
+
+    const minimum =
+      Math.min(
+        ...pitches
+      );
+
+    const maximum =
+      Math.max(
+        ...pitches
+      );
+
+    const average =
+      Math.round(
+        pitches.reduce(
+          (sum,value)=>
+            sum+value,
+          0
+        )/
+        pitches.length
+      );
+
+    range =
+      `${midiName(
+        minimum
+      )} → ${midiName(
+        maximum
+      )}`;
+
+    center =
+      midiName(
+        average
+      );
+
+  }
+
+  return {
+
+    notes,
+
+    contour,
+
+    range,
+
+    center
+
+  };
+
+}
+
+
+/* =========================================================
+   MIDI NAME
+   ========================================================= */
+
+function midiName(
+  midi
+){
+
+  const octave =
+    Math.floor(
+      midi/12
+    )-1;
+
+  const note =
+    NOTE_NAMES[
+      (
+        midi%12+
+        12
+      )%12
+    ];
+
+  return (
+    note+
+    octave
+  );
+
+}
+
+
+/* =========================================================
+   UTILITIES
+   ========================================================= */
+
+function nextFrame(){
+
+  return new Promise(
+    resolve=>
+      requestAnimationFrame(
+        resolve
+      )
+  );
+
+}
+
+
+function download(
+  content,
+  filename,
+  type
+){
+
+  const blob =
+    new Blob(
+      [content],
+      {
+        type
+      }
+    );
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+  const link =
+    document.createElement(
+      "a"
+    );
+
+  link.href =
+    url;
+
+  link.download =
+    filename;
+
+  document.body.appendChild(
+    link
+  );
+
+  link.click();
+
+  link.remove();
+
+  setTimeout(
+    ()=>{
+      URL.revokeObjectURL(
+        url
+      );
+    },
+    1000
+  );
+
+}
+
+
+function downloadBytes(
+  bytes,
+  filename,
+  type
+){
+
+  const blob =
+    new Blob(
+      [bytes],
+      {
+        type
+      }
+    );
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+  const link =
+    document.createElement(
+      "a"
+    );
+
+  link.href =
+    url;
+
+  link.download =
+    filename;
+
+  document.body.appendChild(
+    link
+  );
+
+  link.click();
+
+  link.remove();
+
+  setTimeout(
+    ()=>{
+      URL.revokeObjectURL(
+        url
+      );
+    },
+    1000
+  );
+
+}
+
+
+function escapeHTML(
+  value
+){
+
+  return String(
+    value
+  )
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
+
+}
+
+
+/* =========================================================
+   RESIZE
+   ========================================================= */
+
+window.addEventListener(
+  "resize",
+  ()=>{
+
+    if(
+      state.buffer
+    ){
+
+      drawWaveform(
+        state.buffer
+      );
+
+      drawFingerprint(
+        state.buffer
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   INIT
+   ========================================================= */
+
+console.log(
+  "%cORCHESTRAi%c ready",
+  "color:#e6c36a;font-weight:700",
+  "color:#999"
+);
+
 </script>
+
 </body>
 </html>

@@ -1,922 +1,1322 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#09090a">
+  <meta charset="UTF-8">
+
+  <!-- =========================================================
+       ORCHESTRAi V4
+       ========================================================= -->
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+
+  <meta
+    name="theme-color"
+    content="#0a0a0b"
+  >
+
+  <meta
+    name="description"
+    content="OrchestrAI — reconnaissance mélodique, analyse audio et transcription musicale."
+  >
+
+  <meta
+    name="mobile-web-app-capable"
+    content="yes"
+  >
+
+  <meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+  >
+
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="black-translucent"
+  >
+
+  <title>ORCHESTRi — AI Music Recognition & Transcription</title>
+
+  <!-- Fonts -->
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- OpenSheetMusicDisplay -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@2.2.0/build/opensheetmusicdisplay.min.js"
+  ></script>
+
+  <style>
+
+    /* =========================================================
+       VARIABLES
+       ========================================================= */
+
+    :root {
+      --bg: #09090a;
+      --bg-soft: #0e0e10;
+      --panel: #141416;
+      --panel-hover: #19191c;
+
+      --line: #242429;
+      --line-light: #303036;
+
+      --gold: #e6c36a;
+      --gold-bright: #f1d27d;
+      --gold-dark: #8e753b;
+
+      --text: #f5f3ef;
+      --muted: #9a9996;
+      --muted-2: #686762;
 
-<title>ORCHESTRAi — Audio → Mélodie → Partition</title>
-
-<meta
-  name="description"
-  content="ORCHESTRAi transforme un enregistrement ou un fredonnement en analyse musicale, mélodie, MIDI et MusicXML."
->
+      --success: #7ed6a2;
+      --danger: #df7777;
+      --blue: #8fb8e8;
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      --radius: 20px;
+      --radius-small: 12px;
+
+      --content-width: 1380px;
 
-<link
-  href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600;700&display=swap"
-  rel="stylesheet"
->
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+    }
 
-<style>
 
-/* =========================================================
-   ORCHESTRAi
-   DESIGN SYSTEM
-   ========================================================= */
+    /* =========================================================
+       RESET
+       ========================================================= */
 
-:root{
-  --bg:#09090a;
-  --panel:#121214;
-  --panel2:#171719;
-  --panel3:#0e0e10;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  --line:#27272b;
-  --line2:#343439;
+    html {
+      min-width: 320px;
+      background: var(--bg);
+      scroll-behavior: smooth;
+    }
 
-  --gold:#e6c36a;
-  --gold-dark:#b99542;
+    body {
+      min-height: 100vh;
 
-  --text:#f5f3ef;
-  --muted:#96949a;
+      background:
+        radial-gradient(
+          circle at 50% -10%,
+          rgba(230,195,106,.06),
+          transparent 35%
+        ),
+        var(--bg);
 
-  --green:#78d49b;
-  --red:#ee7777;
-  --blue:#8eafff;
+      color: var(--text);
 
-  --radius:20px;
-}
+      font-family: "Instrument Serif", serif;
 
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-}
+      overflow-x: hidden;
+    }
 
-html{
-  scroll-behavior:smooth;
-}
+    button,
+    input,
+    select {
+      font: inherit;
+    }
 
-body{
-  min-height:100vh;
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
 
-  background:
-    radial-gradient(
-      circle at 50% -20%,
-      rgba(230,195,106,.12),
-      transparent 38%
-    ),
-    radial-gradient(
-      circle at 100% 30%,
-      rgba(120,130,255,.035),
-      transparent 30%
-    ),
-    var(--bg);
+    canvas {
+      display: block;
+      max-width: 100%;
+    }
 
-  color:var(--text);
+    ::selection {
+      background: var(--gold);
+      color: var(--bg);
+    }
 
-  font-family:"Instrument Serif",serif;
 
-  overflow-x:hidden;
-}
+    /* =========================================================
+       TYPOGRAPHY
+       ========================================================= */
 
-button,
-input{
-  font:inherit;
-}
+    .mono {
+      font-family: "JetBrains Mono", monospace;
+    }
 
-button{
-  cursor:pointer;
-}
+    .eyebrow {
+      font-family: "JetBrains Mono", monospace;
 
-.mono{
-  font-family:"JetBrains Mono",monospace;
-}
+      font-size: 10px;
+      font-weight: 700;
 
-/* =========================================================
-   HEADER
-   ========================================================= */
+      letter-spacing: .16em;
+      text-transform: uppercase;
 
-header{
-  height:76px;
+      color: var(--muted);
+    }
 
-  border-bottom:1px solid var(--line);
 
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+    /* =========================================================
+       HEADER
+       ========================================================= */
 
-  padding:0 44px;
+    header {
+      width: 100%;
 
-  backdrop-filter:blur(14px);
+      border-bottom: 1px solid var(--line);
 
-  position:sticky;
-  top:0;
-  z-index:50;
+      padding:
+        calc(18px + var(--safe-top))
+        max(20px, calc(24px + var(--safe-right)))
+        18px
+        max(20px, calc(24px + var(--safe-left)));
 
-  background:rgba(9,9,10,.84);
-}
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
 
-.logo{
-  font-family:"JetBrains Mono",monospace;
-  font-weight:700;
-  font-size:20px;
-  letter-spacing:-.05em;
-}
+      gap: 20px;
+    }
 
-.logo i{
-  color:var(--gold);
-  font-family:"Instrument Serif",serif;
-  font-size:31px;
-}
+    .logo {
+      font-family: "JetBrains Mono", monospace;
 
-.badge{
-  border:1px solid var(--line);
+      font-size: clamp(18px, 2vw, 25px);
+      font-weight: 600;
 
-  border-radius:999px;
+      letter-spacing: -.04em;
+    }
 
-  padding:7px 13px;
+    .logo i {
+      color: var(--gold);
+      font-family: "Instrument Serif", serif;
+      font-size: 1.25em;
+    }
 
-  color:var(--muted);
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-  font-family:"JetBrains Mono",monospace;
-  font-size:10px;
-  font-weight:700;
-  letter-spacing:.04em;
-}
+    .badge {
+      border: 1px solid var(--line);
 
-/* =========================================================
-   HERO
-   ========================================================= */
+      border-radius: 999px;
 
-.hero{
-  max-width:1240px;
-  margin:auto;
+      padding: 7px 12px;
 
-  padding:105px 44px 55px;
-}
+      color: var(--muted);
 
-.hero h1{
-  font-size:
-    clamp(
-      60px,
-      9vw,
-      120px
-    );
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9px;
+      letter-spacing: .04em;
+    }
 
-  line-height:.82;
 
-  letter-spacing:-.065em;
+    /* =========================================================
+       MAIN
+       ========================================================= */
 
-  font-weight:400;
-}
+    main {
+      width: min(var(--content-width), 100%);
+      margin: 0 auto;
 
-.hero h1 span{
-  color:var(--gold);
-  font-style:italic;
-}
+      padding:
+        0
+        max(16px, calc(28px + var(--safe-right)))
+        calc(80px + var(--safe-bottom))
+        max(16px, calc(28px + var(--safe-left)));
+    }
 
-.hero p{
-  max-width:720px;
 
-  margin-top:34px;
+    /* =========================================================
+       HERO
+       ========================================================= */
 
-  color:var(--muted);
+    .hero {
+      padding-top: clamp(55px, 8vw, 110px);
+      padding-bottom: clamp(35px, 5vw, 65px);
+    }
 
-  font-size:19px;
+    .hero h1 {
+      max-width: 900px;
 
-  line-height:1.55;
-}
+      font-size: clamp(52px, 8.2vw, 112px);
+      line-height: .86;
 
-/* =========================================================
-   MAIN
-   ========================================================= */
+      font-weight: 400;
+      letter-spacing: -.055em;
+    }
 
-.app{
-  max-width:1240px;
-  margin:auto;
+    .hero h1 span {
+      color: var(--gold);
+      font-style: italic;
+    }
 
-  padding:0 44px 90px;
-}
+    .hero p {
+      max-width: 700px;
 
-/* =========================================================
-   DROP ZONE
-   ========================================================= */
+      margin-top: 25px;
 
-.drop{
-  position:relative;
+      color: var(--muted);
 
-  min-height:260px;
+      font-size: clamp(16px, 2vw, 20px);
+      line-height: 1.5;
+    }
 
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
 
-  text-align:center;
+    /* =========================================================
+       DROPZONE
+       ========================================================= */
 
-  padding:35px;
+    .dropzone {
+      position: relative;
 
-  border:1px dashed #39393f;
+      width: 100%;
 
-  border-radius:25px;
+      min-height: 260px;
 
-  background:
-    linear-gradient(
-      135deg,
-      #111113,
-      #151416
-    );
+      padding: clamp(30px, 6vw, 70px);
 
-  overflow:hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
-  transition:
-    border-color .25s,
-    background .25s,
-    transform .25s;
-}
+      text-align: center;
 
-.drop::before{
-  content:"";
+      background:
+        linear-gradient(
+          145deg,
+          rgba(255,255,255,.018),
+          transparent
+        ),
+        var(--panel);
 
-  position:absolute;
-  inset:0;
+      border:
+        1px dashed
+        var(--line-light);
 
-  pointer-events:none;
+      border-radius: clamp(18px, 3vw, 28px);
 
-  background:
-    radial-gradient(
-      circle at 50% 0%,
-      rgba(230,195,106,.09),
-      transparent 55%
-    );
-}
+      transition:
+        border-color .2s ease,
+        background .2s ease,
+        transform .2s ease;
 
-.drop.drag{
-  border-color:var(--gold);
+      cursor: pointer;
 
-  background:#17150f;
+      overflow: hidden;
+    }
 
-  transform:scale(1.006);
-}
+    .dropzone:hover {
+      border-color: var(--gold-dark);
+      background: var(--panel-hover);
+    }
 
-.drop h2{
-  position:relative;
+    .dropzone.dragging {
+      border-color: var(--gold);
+      background: #19170f;
+      transform: scale(.995);
+    }
 
-  font-size:35px;
-  font-weight:400;
-}
+    .drop-content {
+      max-width: 720px;
+      width: 100%;
+    }
 
-.drop p{
-  position:relative;
+    .drop-icon {
+      width: 58px;
+      height: 58px;
 
-  margin-top:8px;
+      margin: 0 auto 18px;
 
-  color:var(--muted);
+      border:
+        1px solid
+        var(--line-light);
 
-  font-family:"JetBrains Mono",monospace;
+      border-radius: 50%;
 
-  font-size:11px;
-}
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
-.actions{
-  position:relative;
+      color: var(--gold);
 
-  display:flex;
-  flex-wrap:wrap;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 22px;
+    }
 
-  align-items:center;
+    .dropzone h2 {
+      font-size: clamp(25px, 4vw, 36px);
+      font-weight: 400;
+    }
 
-  justify-content:center;
+    .dropzone p {
+      margin-top: 8px;
 
-  gap:8px;
+      color: var(--muted);
 
-  margin-top:24px;
-}
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      line-height: 1.6;
+    }
 
-.btn{
-  border:0;
+    .drop-actions {
+      margin-top: 22px;
 
-  border-radius:999px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
 
-  padding:12px 19px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
-  background:var(--text);
 
-  color:#09090a;
+    /* =========================================================
+       BUTTONS
+       ========================================================= */
 
-  font-family:"JetBrains Mono",monospace;
+    .btn {
+      min-height: 44px;
 
-  font-size:10px;
-  font-weight:700;
+      padding: 11px 18px;
 
-  transition:
-    transform .2s,
-    opacity .2s,
-    background .2s;
-}
+      border: 0;
+      border-radius: 999px;
 
-.btn:hover{
-  transform:translateY(-1px);
-}
+      background: var(--text);
+      color: var(--bg);
 
-.btn:active{
-  transform:translateY(0);
-}
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      font-weight: 700;
 
-.btn:disabled{
-  opacity:.35;
-  cursor:not-allowed;
-  transform:none;
-}
+      cursor: pointer;
 
-.btn.gold{
-  background:var(--gold);
-}
+      transition:
+        transform .15s ease,
+        opacity .15s ease,
+        background .15s ease;
+    }
 
-.btn.secondary{
-  color:var(--text);
+    .btn:hover {
+      transform: translateY(-1px);
+    }
 
-  background:transparent;
+    .btn:active {
+      transform: translateY(1px);
+    }
 
-  border:1px solid var(--line);
-}
+    .btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+    }
 
-.btn.secondary:hover{
-  border-color:var(--line2);
-  background:#151517;
-}
+    .btn.ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line-light);
+    }
 
-input[type="file"]{
-  display:none;
-}
+    .btn.gold {
+      background: var(--gold);
+      color: var(--bg);
+    }
 
-/* =========================================================
-   WAVEFORM
-   ========================================================= */
+    .btn.danger {
+      border-color: rgba(223,119,119,.4);
+      color: var(--danger);
+    }
 
-.wave-wrap{
-  width:100%;
 
-  margin-top:20px;
+    /* =========================================================
+       FILE INFO
+       ========================================================= */
 
-  display:none;
+    .file-info {
+      display: none;
 
-  border-radius:14px;
+      margin-top: 12px;
 
-  overflow:hidden;
+      padding: 12px 15px;
 
-  background:#0c0c0e;
+      border: 1px solid var(--line);
 
-  border:1px solid #202025;
-}
+      border-radius: 12px;
 
-#wave{
-  display:block;
+      background: var(--bg-soft);
 
-  width:100%;
-  height:110px;
-}
+      color: var(--muted);
 
-/* =========================================================
-   PROGRESS
-   ========================================================= */
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
 
-.progress{
-  width:100%;
+      text-align: left;
+    }
 
-  height:4px;
+    .file-info.visible {
+      display: block;
+    }
 
-  margin-top:17px;
 
-  overflow:hidden;
+    /* =========================================================
+       WAVEFORM
+       ========================================================= */
 
-  display:none;
+    .wave-container {
+      display: none;
 
-  border-radius:999px;
+      margin-top: 14px;
 
-  background:#202025;
-}
+      padding: 12px;
 
-.progress i{
-  display:block;
+      border: 1px solid var(--line);
 
-  width:0;
-  height:100%;
+      border-radius: 16px;
 
-  background:
-    linear-gradient(
-      90deg,
-      var(--gold-dark),
-      var(--gold)
-    );
+      background: var(--bg-soft);
+    }
 
-  border-radius:999px;
+    .wave-container.visible {
+      display: block;
+    }
 
-  transition:width .12s;
-}
+    #waveform {
+      width: 100%;
+      height: 130px;
 
-/* =========================================================
-   GRID
-   ========================================================= */
+      border-radius: 10px;
+    }
 
-.grid{
-  display:grid;
 
-  grid-template-columns:
-    1.15fr
-    .85fr;
+    /* =========================================================
+       STATUS
+       ========================================================= */
 
-  gap:15px;
+    .analysis-status {
+      display: none;
 
-  margin-top:15px;
-}
+      margin-top: 14px;
 
-.card{
-  min-width:0;
+      padding: 12px 15px;
 
-  padding:23px;
+      border: 1px solid var(--line);
 
-  background:rgba(18,18,20,.96);
+      border-radius: 12px;
 
-  border:1px solid var(--line);
+      background: var(--panel);
 
-  border-radius:21px;
-}
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
 
-.full{
-  grid-column:1/-1;
-}
+      color: var(--muted);
+    }
 
-.label{
-  margin-bottom:17px;
+    .analysis-status.visible {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-  color:var(--muted);
+    .status-dot {
+      width: 7px;
+      height: 7px;
 
-  font-family:"JetBrains Mono",monospace;
+      border-radius: 50%;
 
-  font-size:10px;
-  font-weight:700;
+      background: var(--gold);
 
-  letter-spacing:.15em;
+      box-shadow:
+        0 0 0 5px
+        rgba(230,195,106,.08);
 
-  text-transform:uppercase;
-}
+      animation: pulse 1.4s infinite;
+    }
 
-/* =========================================================
-   FINGERPRINT / SPECTRUM
-   ========================================================= */
+    @keyframes pulse {
+      0%,100% {
+        opacity: .35;
+      }
 
-#fingerprint{
-  display:block;
+      50% {
+        opacity: 1;
+      }
+    }
 
-  width:100%;
-  height:190px;
 
-  background:#0b0b0d;
+    /* =========================================================
+       GRID
+       ========================================================= */
 
-  border-radius:13px;
-}
+    .dashboard {
+      display: grid;
 
-/* =========================================================
-   METRICS
-   ========================================================= */
+      grid-template-columns:
+        minmax(0, 1.2fr)
+        minmax(300px, .8fr);
 
-.metrics{
-  display:grid;
+      gap: 16px;
 
-  grid-template-columns:
-    repeat(4,1fr);
+      margin-top: 16px;
+    }
 
-  gap:8px;
+    .card {
+      min-width: 0;
 
-  margin-top:14px;
-}
+      padding: clamp(18px, 3vw, 26px);
 
-.metric{
-  padding:12px;
+      border: 1px solid var(--line);
 
-  background:#0e0e10;
+      border-radius: var(--radius);
 
-  border:1px solid #202025;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(255,255,255,.012),
+          transparent
+        ),
+        var(--panel);
+    }
 
-  border-radius:12px;
-}
+    .card.full {
+      grid-column: 1 / -1;
+    }
 
-.metric small{
-  display:block;
+    .card-title {
+      margin-bottom: 17px;
 
-  margin-bottom:7px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
 
-  color:var(--muted);
+      gap: 15px;
+    }
 
-  font-family:"JetBrains Mono",monospace;
+    .card-title h3 {
+      font-family: "JetBrains Mono", monospace;
 
-  font-size:8px;
-  font-weight:700;
-}
+      font-size: 10px;
+      font-weight: 600;
 
-.metric strong{
-  font-family:"JetBrains Mono",monospace;
+      letter-spacing: .12em;
+      text-transform: uppercase;
 
-  font-size:13px;
-  font-weight:600;
-}
+      color: var(--muted);
+    }
 
-/* =========================================================
-   STATUS
-   ========================================================= */
+    .card-number {
+      color: var(--gold);
+    }
 
-.statusline{
-  display:flex;
-  align-items:center;
 
-  gap:8px;
+    /* =========================================================
+       SPECTROGRAM
+       ========================================================= */
 
-  margin-top:15px;
+    .visualizer {
+      width: 100%;
 
-  color:var(--muted);
+      min-height: 180px;
 
-  font-family:"JetBrains Mono",monospace;
+      border-radius: 12px;
 
-  font-size:10px;
-}
+      background: #0c0c0e;
 
-.dot{
-  width:8px;
-  height:8px;
+      border: 1px solid #1b1b1e;
 
-  flex:none;
+      overflow: hidden;
+    }
 
-  border-radius:50%;
+    #spectrogram {
+      width: 100%;
+      height: 190px;
+    }
 
-  background:#555;
-}
 
-.dot.ok{
-  background:var(--green);
+    /* =========================================================
+       METRICS
+       ========================================================= */
 
-  box-shadow:
-    0 0 12px
-    rgba(120,212,155,.2);
-}
+    .metrics {
+      display: grid;
 
-.dot.busy{
-  background:var(--gold);
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
 
-  box-shadow:
-    0 0 0 5px
-    rgba(230,195,106,.07);
-}
+      gap: 10px;
 
-.dot.error{
-  background:var(--red);
-}
+      margin-top: 14px;
+    }
 
-/* =========================================================
-   ANALYSIS TABLE
-   ========================================================= */
+    .metric {
+      padding: 14px;
 
-.analysis{
-  margin-top:17px;
+      border:
+        1px solid
+        var(--line);
 
-  padding-top:9px;
+      border-radius: 12px;
 
-  border-top:1px solid var(--line);
-}
+      background: var(--bg-soft);
 
-.analysis-row{
-  display:flex;
-  justify-content:space-between;
-  gap:20px;
+      min-width: 0;
+    }
 
-  padding:9px 0;
+    .metric-label {
+      color: var(--muted-2);
 
-  border-bottom:1px solid #202025;
+      font-family: "JetBrains Mono", monospace;
 
-  font-family:"JetBrains Mono",monospace;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
 
-  font-size:10px;
-}
+    .metric-value {
+      margin-top: 6px;
 
-.analysis-row span{
-  color:var(--muted);
-}
+      color: var(--text);
 
-/* =========================================================
-   STEMS
-   ========================================================= */
+      font-size: clamp(18px, 2vw, 24px);
 
-.stems{
-  display:flex;
-  flex-direction:column;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-  gap:7px;
-}
 
-.stem{
-  display:grid;
+    /* =========================================================
+       CONFIDENCE
+       ========================================================= */
 
-  grid-template-columns:
-    1fr
-    auto;
+    .confidence {
+      margin-top: 14px;
+    }
 
-  gap:12px;
+    .confidence-header {
+      display: flex;
+      justify-content: space-between;
 
-  align-items:center;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9px;
 
-  padding:14px;
+      color: var(--muted);
+    }
 
-  background:#0e0e10;
+    .progress {
+      height: 5px;
 
-  border:1px solid var(--line);
+      margin-top: 8px;
 
-  border-radius:13px;
-}
+      border-radius: 999px;
 
-.stem-name{
-  font-family:"JetBrains Mono",monospace;
+      overflow: hidden;
 
-  font-size:10px;
-  font-weight:700;
-}
+      background: #252529;
+    }
 
-.stem-info{
-  margin-top:5px;
+    .progress > div {
+      width: 0%;
 
-  color:var(--muted);
+      height: 100%;
 
-  font-family:"JetBrains Mono",monospace;
+      background: var(--gold);
 
-  font-size:9px;
+      transition: width .5s ease;
+    }
 
-  line-height:1.5;
-}
 
-.stem button{
-  padding:7px 10px;
+    /* =========================================================
+       STEMS
+       ========================================================= */
 
-  color:var(--text);
+    .stems {
+      display: flex;
+      flex-direction: column;
+    }
 
-  background:transparent;
+    .stem {
+      padding: 14px 0;
 
-  border:1px solid var(--line);
+      border-bottom:
+        1px solid
+        var(--line);
 
-  border-radius:999px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
 
-  font-family:"JetBrains Mono",monospace;
+      gap: 12px;
+    }
 
-  font-size:8px;
-  font-weight:700;
-}
+    .stem:last-child {
+      border-bottom: 0;
+    }
 
-/* =========================================================
-   SCORE
-   ========================================================= */
+    .stem-name {
+      min-width: 0;
+    }
 
-.score{
-  min-height:450px;
+    .stem-name strong {
+      display: block;
 
-  padding:20px;
+      color: var(--text);
 
-  overflow:auto;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
 
-  background:#fffdf8;
+      letter-spacing: .04em;
+    }
 
-  border-radius:17px;
-}
+    .stem-name span {
+      display: block;
 
-#scoreCanvas{
-  min-height:400px;
-}
+      margin-top: 4px;
 
-.score-empty{
-  min-height:400px;
+      color: var(--muted);
 
-  display:flex;
-  align-items:center;
-  justify-content:center;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9px;
+    }
 
-  color:#777;
+    .stem-button {
+      flex-shrink: 0;
 
-  text-align:center;
+      width: 36px;
+      height: 36px;
 
-  font-family:"JetBrains Mono",monospace;
+      border:
+        1px solid
+        var(--line-light);
 
-  font-size:11px;
-}
+      border-radius: 50%;
 
-#scoreCanvas canvas{
-  display:block;
+      background: transparent;
 
-  max-width:none;
-}
+      color: var(--text);
 
-/* =========================================================
-   HUMMING
-   ========================================================= */
+      cursor: pointer;
+    }
 
-.humming{
-  padding:20px;
 
-  background:
-    linear-gradient(
-      135deg,
-      #15130e,
-      #111113
-    );
+    /* =========================================================
+       HUMMING
+       ========================================================= */
 
-  border:1px solid #2e2a20;
-}
+    .humming-panel {
+      display: grid;
 
-.humming h3{
-  font-size:23px;
+      grid-template-columns:
+        minmax(0, 1fr)
+        auto;
 
-  font-weight:400;
-}
+      gap: 12px;
 
-.humming p{
-  max-width:800px;
+      padding: 15px;
 
-  margin-top:7px;
+      border: 1px solid var(--line);
 
-  color:var(--muted);
+      border-radius: 14px;
 
-  font-size:13px;
+      background: var(--bg-soft);
+    }
 
-  line-height:1.55;
-}
+    .humming-copy h4 {
+      font-size: 19px;
+      font-weight: 400;
+    }
 
-#hummingResult{
-  margin-top:15px;
+    .humming-copy p {
+      margin-top: 5px;
 
-  padding:13px;
+      color: var(--muted);
 
-  background:#0d0d0f;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9px;
 
-  border:1px solid #25231e;
+      line-height: 1.6;
+    }
 
-  border-radius:12px;
+    .record-button {
+      width: 48px;
+      height: 48px;
 
-  color:var(--gold);
+      border: 1px solid var(--line-light);
 
-  white-space:pre-wrap;
+      border-radius: 50%;
 
-  font-family:"JetBrains Mono",monospace;
+      background: transparent;
 
-  font-size:10px;
+      color: var(--gold);
 
-  line-height:1.6;
-}
+      cursor: pointer;
+    }
 
-/* =========================================================
-   FOOTER
-   ========================================================= */
+    .record-button.recording {
+      background: var(--danger);
+      color: white;
+      border-color: var(--danger);
 
-footer{
-  max-width:1240px;
+      animation: recordingPulse 1s infinite;
+    }
 
-  margin:auto;
+    @keyframes recordingPulse {
+      0%,100% {
+        box-shadow:
+          0 0 0 0 rgba(223,119,119,.3);
+      }
 
-  padding:
-    0
-    44px
-    40px;
+      50% {
+        box-shadow:
+          0 0 0 10px rgba(223,119,119,0);
+      }
+    }
 
-  color:#59585d;
 
-  font-family:"JetBrains Mono",monospace;
+    /* =========================================================
+       SCORE
+       ========================================================= */
 
-  font-size:9px;
+    .score-wrapper {
+      background: #fffefa;
 
-  line-height:1.7;
-}
+      border-radius: 18px;
 
-/* =========================================================
-   TOAST
-   ========================================================= */
+      overflow: hidden;
 
-#toast{
-  position:fixed;
+      color: #111;
+    }
 
-  left:50%;
-  bottom:25px;
+    .score-toolbar {
+      padding: 10px 12px;
 
-  z-index:100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
 
-  transform:
-    translate(-50%,20px);
+      gap: 10px;
 
-  opacity:0;
+      background: #f3f1ea;
 
-  pointer-events:none;
+      border-bottom: 1px solid #dedbd1;
 
-  padding:10px 17px;
+      flex-wrap: wrap;
+    }
 
-  color:#09090a;
+    .score-toolbar span {
+      color: #67645e;
 
-  background:#f5f3ef;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9px;
+    }
 
-  border-radius:999px;
+    .score-view {
+      min-height: 420px;
 
-  font-family:"JetBrains Mono",monospace;
+      max-width: 100%;
 
-  font-size:10px;
-  font-weight:700;
+      overflow-x: auto;
+      overflow-y: hidden;
 
-  transition:
-    opacity .25s,
-    transform .25s;
-}
+      -webkit-overflow-scrolling: touch;
 
-#toast.show{
-  opacity:1;
+      padding: 20px;
+    }
 
-  transform:
-    translate(-50%,0);
-}
+    #osmd {
+      min-width: 600px;
 
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
+      color: #111;
+    }
 
-@media(max-width:850px){
+    .score-placeholder {
+      min-height: 360px;
 
-  header{
-    padding:0 20px;
-  }
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
-  .badge{
-    display:none;
-  }
+      flex-direction: column;
 
-  .hero{
-    padding:
-      70px
-      20px
-      35px;
-  }
+      gap: 12px;
 
-  .app{
-    padding:
-      0
-      20px
-      70px;
-  }
+      color: #777;
 
-  .grid{
-    grid-template-columns:1fr;
-  }
+      text-align: center;
+    }
 
-  .full{
-    grid-column:auto;
-  }
+    .score-placeholder strong {
+      font-family: "Instrument Serif", serif;
 
-  .metrics{
-    grid-template-columns:
-      1fr
-      1fr;
-  }
+      font-size: 30px;
 
-  .drop{
-    min-height:225px;
-  }
+      font-weight: 400;
 
-  footer{
-    padding-left:20px;
-    padding-right:20px;
-  }
-}
+      color: #333;
+    }
 
-@media(max-width:500px){
+    .score-placeholder span {
+      max-width: 500px;
 
-  .hero h1{
-    font-size:58px;
-  }
+      font-family: "JetBrains Mono", monospace;
 
-  .hero p{
-    font-size:16px;
-  }
+      font-size: 10px;
 
-  .metrics{
-    grid-template-columns:1fr 1fr;
-  }
+      line-height: 1.6;
+    }
 
-  .score{
-    padding:10px;
-  }
-}
 
-</style>
+    /* =========================================================
+       SCORE CONTROLS
+       ========================================================= */
+
+    .score-controls {
+      display: flex;
+
+      gap: 8px;
+
+      margin-top: 14px;
+
+      flex-wrap: wrap;
+    }
+
+    .transpose-box {
+      display: flex;
+
+      align-items: center;
+
+      gap: 6px;
+    }
+
+    .transpose-box input {
+      width: 75px;
+      height: 44px;
+
+      border: 1px solid var(--line-light);
+
+      border-radius: 999px;
+
+      background: transparent;
+
+      color: var(--text);
+
+      text-align: center;
+
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+    }
+
+
+    /* =========================================================
+       NOTES
+       ========================================================= */
+
+    .detected-notes {
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 6px;
+
+      margin-top: 12px;
+    }
+
+    .note-chip {
+      padding: 6px 8px;
+
+      border-radius: 7px;
+
+      background: #1b1b1f;
+
+      color: var(--gold);
+
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9px;
+    }
+
+
+    /* =========================================================
+       FOOTER
+       ========================================================= */
+
+    footer {
+      margin-top: 55px;
+
+      padding-top: 22px;
+
+      border-top: 1px solid var(--line);
+
+      display: flex;
+
+      justify-content: space-between;
+
+      gap: 20px;
+
+      color: var(--muted-2);
+
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9px;
+
+      line-height: 1.6;
+    }
+
+
+    /* =========================================================
+       TOAST
+       ========================================================= */
+
+    #toast {
+      position: fixed;
+
+      z-index: 1000;
+
+      left: 50%;
+
+      bottom:
+        calc(20px + var(--safe-bottom));
+
+      transform:
+        translate(-50%, 20px);
+
+      opacity: 0;
+
+      pointer-events: none;
+
+      max-width: min(90vw, 500px);
+
+      padding: 11px 16px;
+
+      border-radius: 999px;
+
+      background: var(--text);
+      color: var(--bg);
+
+      font-family: "JetBrains Mono", monospace;
+
+      font-size: 10px;
+
+      text-align: center;
+
+      transition:
+        opacity .2s ease,
+        transform .2s ease;
+    }
+
+    #toast.show {
+      opacity: 1;
+
+      transform:
+        translate(-50%, 0);
+    }
+
+
+    /* =========================================================
+       RESPONSIVE — TABLET
+       ========================================================= */
+
+    @media (max-width: 950px) {
+
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+
+      .card.full {
+        grid-column: auto;
+      }
+
+      .hero h1 {
+        max-width: 760px;
+      }
+
+    }
+
+
+    /* =========================================================
+       RESPONSIVE — MOBILE
+       ========================================================= */
+
+    @media (max-width: 640px) {
+
+      header {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .badge {
+        display: none;
+      }
+
+      main {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .hero {
+        padding-top: 45px;
+      }
+
+      .hero h1 {
+        font-size: clamp(48px, 15vw, 72px);
+      }
+
+      .hero p {
+        font-size: 16px;
+      }
+
+      .dropzone {
+        min-height: 245px;
+
+        padding:
+          30px
+          16px;
+      }
+
+      .drop-actions {
+        flex-direction: column;
+      }
+
+      .drop-actions .btn {
+        width: 100%;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-value {
+        font-size: 20px;
+      }
+
+      .humming-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .record-button {
+        width: 100%;
+        height: 44px;
+        border-radius: 999px;
+      }
+
+      .score-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .score-controls .btn {
+        width: 100%;
+      }
+
+      .transpose-box {
+        grid-column: 1 / -1;
+      }
+
+      .transpose-box input {
+        flex: 1;
+      }
+
+      .footer-hide-mobile {
+        display: none;
+      }
+
+      footer {
+        flex-direction: column;
+      }
+
+    }
+
+
+    /* =========================================================
+       REDUCED MOTION
+       ========================================================= */
+
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
+      }
+
+    }
+
+
+    /* =========================================================
+       PRINT
+       ========================================================= */
+
+    @media print {
+
+      body {
+        background: white;
+        color: black;
+      }
+
+      header,
+      .hero,
+      .dropzone,
+      .dashboard > .card:not(.full),
+      .score-toolbar,
+      .score-controls,
+      footer {
+        display: none !important;
+      }
+
+      main {
+        width: 100%;
+        padding: 0;
+      }
+
+      .card.full {
+        border: 0;
+        padding: 0;
+      }
+
+      .score-wrapper {
+        border-radius: 0;
+      }
+
+      .score-view {
+        overflow: visible;
+        padding: 0;
+      }
+
+      #osmd {
+        min-width: 0;
+      }
+
+    }
+
+  </style>
 </head>
 
-<body>
 
-<!-- =======================================================
-     HEADER
-     ======================================================= -->
+<body>
 
 <header>
 
@@ -924,179 +1324,250 @@ footer{
     ORCHESTRA<span><i>i</i></span>
   </div>
 
-  <div class="badge">
-    V3 · LOCAL-FIRST · AUDIO → MUSIC
+  <div class="header-right">
+    <div class="badge">
+      V4 • AUDIO → MELODY → SCORE
+    </div>
   </div>
 
 </header>
 
 
-<!-- =======================================================
-     HERO
-     ======================================================= -->
+<main>
 
-<section class="hero">
+  <!-- =======================================================
+       HERO
+       ======================================================== -->
 
-  <h1>
-    Écoute.<br>
-    <span>Comprends.</span><br>
-    Écris.
-  </h1>
+  <section class="hero">
 
-  <p>
-    ORCHESTRAi analyse un enregistrement musical ou un
-    fredonnement pour en extraire les informations musicales :
-    tonalité, tempo, mélodie, notes, MIDI et MusicXML.
-    Le traitement de base fonctionne directement dans ton navigateur.
-  </p>
+    <div class="eyebrow">
+      AI MUSIC RECOGNITION / TRANSCRIPTION
+    </div>
 
-</section>
+    <h1>
+      Écoute.<br>
+      <span>Comprends.</span><br>
+      Écris.
+    </h1>
 
-
-<!-- =======================================================
-     APPLICATION
-     ======================================================= -->
-
-<main class="app">
-
-  <!-- =====================================================
-       AUDIO DROP
-       ===================================================== -->
-
-  <section
-    class="drop"
-    id="drop"
-  >
-
-    <h2 id="dropTitle">
-      Dépose ton audio ici
-    </h2>
-
-    <p id="dropSub">
-      WAV · MP3 · FLAC · OGG · analyse locale
+    <p>
+      OrchestrAI analyse une mélodie, un morceau ou un fredonnement,
+      extrait son contour musical et prépare sa transformation en
+      partition numérique.
     </p>
 
-    <div class="actions">
+  </section>
 
-      <button
-        class="btn"
-        id="chooseBtn"
-        type="button"
+
+  <!-- =======================================================
+       AUDIO INPUT
+       ======================================================== -->
+
+  <section
+    class="dropzone"
+    id="dropzone"
+    tabindex="0"
+    role="button"
+    aria-label="Importer un fichier audio"
+  >
+
+    <div class="drop-content">
+
+      <div class="drop-icon">
+        ♪
+      </div>
+
+      <h2 id="dropTitle">
+        Dépose ton audio ici
+      </h2>
+
+      <p id="dropSubtitle">
+        WAV · MP3 · FLAC · M4A · OGG<br>
+        Analyse effectuée localement dans le navigateur
+      </p>
+
+      <div class="drop-actions">
+
+        <button
+          class="btn"
+          id="chooseFileBtn"
+          type="button"
+        >
+          CHOISIR UN AUDIO
+        </button>
+
+        <button
+          class="btn ghost"
+          id="hummingBtn"
+          type="button"
+        >
+          🎤 FREDONNER
+        </button>
+
+      </div>
+
+      <input
+        type="file"
+        id="fileInput"
+        hidden
+        accept="audio/*"
       >
-        CHOISIR UN FICHIER
-      </button>
 
-      <button
-        class="btn gold"
-        id="humBtn"
-        type="button"
-      >
-        🎙 FREDONNER
-      </button>
-
-    </div>
-
-    <input
-      id="file"
-      type="file"
-      accept="audio/*"
-    >
-
-    <div
-      class="wave-wrap"
-      id="waveWrap"
-    >
-      <canvas id="wave"></canvas>
-    </div>
-
-    <div
-      class="progress"
-      id="progress"
-    >
-      <i></i>
     </div>
 
   </section>
 
 
-  <!-- =====================================================
-       GRID
-       ===================================================== -->
+  <!-- =======================================================
+       FILE INFORMATION
+       ======================================================== -->
 
-  <section class="grid">
+  <div
+    class="file-info"
+    id="fileInfo"
+  ></div>
 
 
-    <!-- ===================================================
-         ANALYSE
-         =================================================== -->
+  <!-- =======================================================
+       WAVEFORM
+       ======================================================== -->
+
+  <div
+    class="wave-container"
+    id="waveContainer"
+  >
+
+    <canvas id="waveform"></canvas>
+
+  </div>
+
+
+  <!-- =======================================================
+       ANALYSIS STATUS
+       ======================================================== -->
+
+  <div
+    class="analysis-status"
+    id="analysisStatus"
+  >
+
+    <div class="status-dot"></div>
+
+    <span id="statusText">
+      Analyse en cours…
+    </span>
+
+  </div>
+
+
+  <!-- =======================================================
+       DASHBOARD
+       ======================================================== -->
+
+  <section class="dashboard">
+
+
+    <!-- =====================================================
+         FINGERPRINT / AUDIO ANALYSIS
+         ====================================================== -->
 
     <article class="card">
 
-      <div class="label">
-        01 / empreinte musicale
-      </div>
+      <div class="card-title">
 
-      <canvas
-        id="fingerprint"
-      ></canvas>
+        <h3>
+          <span class="card-number">01</span>
+          Analyse audio
+        </h3>
 
-      <div class="metrics">
-
-        <div class="metric">
-          <small>TONALITÉ</small>
-          <strong id="key">—</strong>
-        </div>
-
-        <div class="metric">
-          <small>TEMPO</small>
-          <strong id="tempo">—</strong>
-        </div>
-
-        <div class="metric">
-          <small>MESURE</small>
-          <strong id="meter">—</strong>
-        </div>
-
-        <div class="metric">
-          <small>CONFIANCE</small>
-          <strong id="confidence">—</strong>
-        </div>
-
-      </div>
-
-      <div class="statusline">
-
-        <span
-          class="dot"
-          id="audioDot"
-        ></span>
-
-        <span id="audioStatus">
-          Aucun audio chargé
+        <span class="eyebrow">
+          FFT / F0 / TEMPO
         </span>
 
       </div>
 
-      <div class="analysis">
 
-        <div class="analysis-row">
-          <span>Durée</span>
-          <strong id="duration">—</strong>
+      <div class="visualizer">
+
+        <canvas
+          id="spectrogram"
+          aria-label="Spectrogramme audio"
+        ></canvas>
+
+      </div>
+
+
+      <div class="metrics">
+
+        <div class="metric">
+
+          <div class="metric-label">
+            Durée
+          </div>
+
+          <div
+            class="metric-value"
+            id="durationValue"
+          >
+            —
+          </div>
+
         </div>
 
-        <div class="analysis-row">
-          <span>Échantillonnage</span>
-          <strong id="sampleRate">—</strong>
+
+        <div class="metric">
+
+          <div class="metric-label">
+            Tempo
+          </div>
+
+          <div
+            class="metric-value"
+            id="tempoValue"
+          >
+            —
+          </div>
+
         </div>
 
-        <div class="analysis-row">
-          <span>Canaux</span>
-          <strong id="channels">—</strong>
+
+        <div class="metric">
+
+          <div class="metric-label">
+            Tonalité
+          </div>
+
+          <div
+            class="metric-value"
+            id="keyValue"
+          >
+            —
+          </div>
+
         </div>
 
-        <div class="analysis-row">
-          <span>Énergie RMS</span>
-          <strong id="rms">—</strong>
+      </div>
+
+
+      <div class="confidence">
+
+        <div class="confidence-header">
+
+          <span>
+            CONFIANCE ANALYTIQUE
+          </span>
+
+          <span id="confidenceText">
+            —
+          </span>
+
+        </div>
+
+        <div class="progress">
+
+          <div id="confidenceBar"></div>
+
         </div>
 
       </div>
@@ -1104,509 +1575,683 @@ footer{
     </article>
 
 
-    <!-- ===================================================
-         SEPARATION
-         =================================================== -->
+    <!-- =====================================================
+         HUMMING
+         ====================================================== -->
 
     <article class="card">
 
-      <div class="label">
-        02 / séparation des sources
+      <div class="card-title">
+
+        <h3>
+          <span class="card-number">02</span>
+          Mélodie fredonnée
+        </h3>
+
+        <span class="eyebrow">
+          HUMMING
+        </span>
+
       </div>
 
+
+      <div class="humming-panel">
+
+        <div class="humming-copy">
+
+          <h4>
+            Fredonne ce que tu cherches.
+          </h4>
+
+          <p>
+            OrchestrAI extrait la fréquence fondamentale,
+            convertit le contour vocal en notes puis le
+            compare à sa représentation mélodique.
+          </p>
+
+        </div>
+
+        <button
+          class="record-button"
+          id="recordButton"
+          type="button"
+          aria-label="Commencer le fredonnement"
+        >
+          ●
+        </button>
+
+      </div>
+
+
       <div
-        class="stems"
-        id="stems"
+        class="detected-notes"
+        id="detectedNotes"
+      ></div>
+
+
+      <div
+        style="
+          margin-top:18px;
+          color:var(--muted);
+          font-family:'JetBrains Mono',monospace;
+          font-size:9px;
+          line-height:1.7;
+        "
+        id="hummingResult"
       >
+        Aucun fredonnement analysé.
+      </div>
+
+    </article>
+
+
+    <!-- =====================================================
+         ORCHESTRATION / STEMS
+         ====================================================== -->
+
+    <article class="card">
+
+      <div class="card-title">
+
+        <h3>
+          <span class="card-number">03</span>
+          Familles sonores
+        </h3>
+
+        <span class="eyebrow">
+          ANALYSIS LAYERS
+        </span>
+
+      </div>
+
+
+      <div class="stems">
 
         <div class="stem">
 
-          <div>
+          <div class="stem-name">
 
-            <div class="stem-name">
-              AUDIO ORIGINAL
-            </div>
+            <strong>
+              STRINGS
+            </strong>
 
-            <div class="stem-info">
-              En attente d'un fichier audio
-            </div>
+            <span>
+              Violons · Altos · Violoncelles · Contrebasses
+            </span>
 
           </div>
 
           <button
+            class="stem-button"
             type="button"
-            disabled
+            data-stem="strings"
+            aria-label="Écouter les cordes"
           >
-            —
+            ▶
+          </button>
+
+        </div>
+
+
+        <div class="stem">
+
+          <div class="stem-name">
+
+            <strong>
+              BRASS
+            </strong>
+
+            <span>
+              Cors · Trompettes · Trombones · Tubas
+            </span>
+
+          </div>
+
+          <button
+            class="stem-button"
+            type="button"
+            data-stem="brass"
+            aria-label="Écouter les cuivres"
+          >
+            ▶
+          </button>
+
+        </div>
+
+
+        <div class="stem">
+
+          <div class="stem-name">
+
+            <strong>
+              WOODWINDS
+            </strong>
+
+            <span>
+              Flûtes · Hautbois · Clarinettes · Bassons
+            </span>
+
+          </div>
+
+          <button
+            class="stem-button"
+            type="button"
+            data-stem="woodwinds"
+            aria-label="Écouter les bois"
+          >
+            ▶
+          </button>
+
+        </div>
+
+
+        <div class="stem">
+
+          <div class="stem-name">
+
+            <strong>
+              PERCUSSION
+            </strong>
+
+            <span>
+              Timpani · Harpe · Piano · Percussions
+            </span>
+
+          </div>
+
+          <button
+            class="stem-button"
+            type="button"
+            data-stem="percussion"
+            aria-label="Écouter les percussions"
+          >
+            ▶
           </button>
 
         </div>
 
       </div>
 
-      <div class="statusline">
+    </article>
+
+
+    <!-- =====================================================
+         SCORE
+         ====================================================== -->
+
+    <article class="card full">
+
+      <div class="card-title">
+
+        <h3>
+          <span class="card-number">04</span>
+          Partition
+        </h3>
 
         <span
-          class="dot"
-          id="sepDot"
-        ></span>
-
-        <span id="sepStatus">
-          Séparation inactive
+          class="eyebrow"
+          id="scoreStatus"
+        >
+          EN ATTENTE
         </span>
 
       </div>
 
-      <p
-        style="
-          margin-top:14px;
-          color:var(--muted);
-          font:10px 'JetBrains Mono';
-          line-height:1.6;
-        "
-      >
-        Le moteur de séparation est prévu comme module
-        indépendant. Il peut recevoir Demucs/ONNX/WebGPU
-        sans modifier le reste de l'application.
-      </p>
 
-    </article>
+      <div class="score-wrapper">
+
+        <div class="score-toolbar">
+
+          <span>
+            MUSICXML / OPEN SHEET MUSIC DISPLAY
+          </span>
+
+          <span id="scoreInfo">
+            Aucune partition
+          </span>
+
+        </div>
 
 
-    <!-- ===================================================
-         PARTITION
-         =================================================== -->
+        <div class="score-view">
 
-    <article class="card full">
+          <div id="osmd">
 
-      <div class="label">
-        03 / transcription musicale
-      </div>
+            <div class="score-placeholder">
 
-      <div class="score">
+              <strong>
+                La partition apparaîtra ici.
+              </strong>
 
-        <div
-          id="scoreCanvas"
-          class="score-empty"
-        >
-          Charge un morceau pour lancer la transcription.
+              <span>
+                Importe un morceau ou fredonne une mélodie.
+                OrchestrAI construira ensuite une représentation
+                musicale exploitable.
+              </span>
+
+            </div>
+
+          </div>
+
         </div>
 
       </div>
 
-      <div class="controls actions"
-           style="justify-content:flex-start;margin-top:14px;">
+
+      <!-- SCORE CONTROLS -->
+
+      <div class="score-controls">
 
         <button
           class="btn"
-          id="transcribeBtn"
-          type="button"
-        >
-          TRANSCRIRE
-        </button>
-
-        <button
-          class="btn secondary"
-          id="xmlBtn"
+          id="exportXML"
           type="button"
         >
           EXPORT MUSICXML
         </button>
 
         <button
-          class="btn secondary"
-          id="midiBtn"
+          class="btn"
+          id="exportMIDI"
           type="button"
         >
           EXPORT MIDI
         </button>
 
         <button
-          class="btn secondary"
-          id="playBtn"
+          class="btn ghost"
+          id="printScore"
+          type="button"
+        >
+          EXPORT / IMPRIMER PDF
+        </button>
+
+        <button
+          class="btn ghost"
+          id="playMelody"
           type="button"
         >
           ▶ ÉCOUTER
         </button>
 
-      </div>
-
-      <div class="statusline">
-
-        <span
-          class="dot"
-          id="transDot"
-        ></span>
-
-        <span id="transStatus">
-          Moteur de transcription en attente
-        </span>
-
-      </div>
-
-    </article>
-
-
-    <!-- ===================================================
-         HUMMING
-         =================================================== -->
-
-    <article class="card full humming">
-
-      <h3>
-        Fredonnement → mélodie
-      </h3>
-
-      <p>
-        Fredonne naturellement une mélodie pendant quelques secondes.
-        ORCHESTRAi extrait sa hauteur fondamentale, nettoie les
-        variations mineures et reconstruit un contour mélodique.
-        La mélodie peut ainsi être comparée même si elle est chantée
-        dans une autre tonalité.
-      </p>
-
-      <div
-        class="actions"
-        style="
-          justify-content:flex-start;
-          margin-top:18px;
-        "
-      >
-
         <button
-          class="btn gold"
-          id="recordBtn"
+          class="btn ghost"
+          id="stopMelody"
           type="button"
         >
-          ● ENREGISTRER 8 S
+          ■ STOP
         </button>
 
-      </div>
 
-      <div id="hummingResult">
-        Aucun fredonnement analysé.
+        <div class="transpose-box">
+
+          <input
+            type="number"
+            id="transposeInput"
+            value="0"
+            min="-24"
+            max="24"
+            step="1"
+            aria-label="Transposition en demi-tons"
+          >
+
+          <button
+            class="btn ghost"
+            id="transposeBtn"
+            type="button"
+          >
+            TRANSPOSER
+          </button>
+
+        </div>
+
       </div>
 
     </article>
 
   </section>
 
+
+  <!-- =======================================================
+       FOOTER
+       ======================================================== -->
+
+  <footer>
+
+    <div>
+      ORCHESTRAi V4<br>
+      AUDIO INTELLIGENCE / MUSICAL TRANSCRIPTION
+    </div>
+
+    <div class="footer-hide-mobile">
+      Analyse navigateur · aucune obligation d'envoyer l'audio
+    </div>
+
+  </footer>
+
 </main>
 
-
-<!-- =======================================================
-     FOOTER
-     ======================================================= -->
-
-<footer>
-
-  ORCHESTRAi V3 ·
-  Audio → analyse musicale → mélodie → MIDI / MusicXML.
-
-  <br>
-
-  Le navigateur ne prétend pas exécuter un modèle neuronal
-  lourd lorsqu'il n'est pas réellement chargé.
-
-</footer>
-
-
-<!-- =======================================================
-     TOAST
-     ======================================================= -->
 
 <div id="toast"></div>
 
 
 <script>
 
-/* =========================================================
-   ORCHESTRAi ENGINE
-   ========================================================= */
-
 "use strict";
 
 
-/* =========================================================
+/* ============================================================
+   ORCHESTRAi V4 — CORE
+   ============================================================ */
+
+
+/* ============================================================
    GLOBAL STATE
-   ========================================================= */
+   ============================================================ */
 
 const state = {
 
-  audioContext:null,
+  audioContext: null,
 
-  buffer:null,
+  audioBuffer: null,
 
-  notes:[],
+  sourceNode: null,
 
-  analysis:null,
+  currentObjectURL: null,
 
-  humming:null,
+  isRecording: false,
 
-  recorder:null,
+  recorder: null,
 
-  recording:false,
+  recorderStream: null,
 
-  recordingChunks:[],
+  recordingChunks: [],
 
-  sourceNode:null
+  notes: [],
+
+  originalNotes: [],
+
+  musicXML: "",
+
+  osmd: null,
+
+  playbackNodes: [],
+
+  sampleRate: 44100,
+
+  duration: 0,
+
+  tempo: 0,
+
+  key: "—",
+
+  confidence: 0
 
 };
 
 
-/* =========================================================
-   NOTE NAMES
-   ========================================================= */
+/* ============================================================
+   DOM
+   ============================================================ */
 
-const NOTE_NAMES = [
+const $ = id => document.getElementById(id);
 
-  "C",
-  "C♯",
-  "D",
-  "E♭",
-  "E",
-  "F",
-  "F♯",
-  "G",
-  "A♭",
-  "A",
-  "B♭",
-  "B"
+const dropzone = $("dropzone");
+const fileInput = $("fileInput");
 
-];
+const dropTitle = $("dropTitle");
+const dropSubtitle = $("dropSubtitle");
 
+const fileInfo = $("fileInfo");
 
-/* =========================================================
-   SHORTCUT
-   ========================================================= */
+const waveContainer = $("waveContainer");
+const waveformCanvas = $("waveform");
 
-function $(id){
+const spectrogramCanvas = $("spectrogram");
 
-  return document.getElementById(id);
+const analysisStatus = $("analysisStatus");
+const statusText = $("statusText");
 
-}
+const durationValue = $("durationValue");
+const tempoValue = $("tempoValue");
+const keyValue = $("keyValue");
 
+const confidenceText = $("confidenceText");
+const confidenceBar = $("confidenceBar");
 
-/* =========================================================
-   TOAST
-   ========================================================= */
+const detectedNotes = $("detectedNotes");
+const hummingResult = $("hummingResult");
 
-function toast(message){
+const recordButton = $("recordButton");
 
-  const element = $("toast");
-
-  element.textContent =
-    message;
-
-  element.classList.add("show");
-
-  clearTimeout(
-    toast.timeout
-  );
-
-  toast.timeout =
-    setTimeout(
-      ()=>{
-        element.classList.remove("show");
-      },
-      2800
-    );
-
-}
+const osmdContainer = $("osmd");
+const scoreStatus = $("scoreStatus");
+const scoreInfo = $("scoreInfo");
 
 
-/* =========================================================
-   STATUS
-   ========================================================= */
-
-function setStatus(
-  dot,
-  textElement,
-  message,
-  type=""
-){
-
-  if(dot){
-
-    dot.className =
-      "dot " + type;
-
-  }
-
-  if(textElement){
-
-    textElement.textContent =
-      message;
-
-  }
-
-}
-
-
-/* =========================================================
-   PROGRESS
-   ========================================================= */
-
-function setProgress(
-  value,
-  visible=true
-){
-
-  const progress =
-    $("progress");
-
-  const bar =
-    progress.querySelector("i");
-
-  progress.style.display =
-    visible
-    ? "block"
-    : "none";
-
-  bar.style.width =
-    Math.max(
-      0,
-      Math.min(
-        100,
-        value
-      )
-    ) + "%";
-
-}
-
-
-/* =========================================================
+/* ============================================================
    AUDIO CONTEXT
-   ========================================================= */
+   ============================================================ */
 
-async function getAudioContext(){
+function getAudioContext() {
 
-  if(!state.audioContext){
+  if (!state.audioContext) {
+
+    const AudioContextClass =
+      window.AudioContext ||
+      window.webkitAudioContext;
+
+    if (!AudioContextClass) {
+      throw new Error(
+        "Web Audio API non disponible dans ce navigateur."
+      );
+    }
 
     state.audioContext =
-      new (
-        window.AudioContext ||
-        window.webkitAudioContext
-      )();
-
-  }
-
-  if(
-    state.audioContext.state ===
-    "suspended"
-  ){
-
-    await state.audioContext.resume();
+      new AudioContextClass();
 
   }
 
   return state.audioContext;
+}
+
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+
+function toast(message) {
+
+  const element = $("toast");
+
+  element.textContent = message;
+
+  element.classList.add("show");
+
+  clearTimeout(toast.timer);
+
+  toast.timer = setTimeout(() => {
+
+    element.classList.remove("show");
+
+  }, 3000);
+}
+
+
+function setStatus(message, visible = true) {
+
+  statusText.textContent = message;
+
+  analysisStatus.classList.toggle(
+    "visible",
+    visible
+  );
+}
+
+
+function formatDuration(seconds) {
+
+  if (!Number.isFinite(seconds)) {
+    return "—";
+  }
+
+  const minutes =
+    Math.floor(seconds / 60);
+
+  const secondsPart =
+    Math.floor(seconds % 60)
+      .toString()
+      .padStart(2, "0");
+
+  return `${minutes}:${secondsPart}`;
+}
+
+
+function clamp(value, min, max) {
+
+  return Math.max(
+    min,
+    Math.min(max, value)
+  );
 
 }
 
 
-/* =========================================================
+/* ============================================================
    FILE INPUT
-   ========================================================= */
+   ============================================================ */
 
-$("chooseBtn").addEventListener(
+$("chooseFileBtn").addEventListener(
   "click",
-  event=>{
+  event => {
 
     event.stopPropagation();
 
-    $("file").click();
+    fileInput.click();
 
   }
 );
 
 
-$("drop").addEventListener(
+dropzone.addEventListener(
   "click",
-  event=>{
+  event => {
 
-    /*
-      Empêche un clic sur un bouton
-      de rouvrir le sélecteur.
-    */
-
-    if(
+    if (
       event.target.closest("button")
-    ){
-
+    ) {
       return;
+    }
+
+    fileInput.click();
+
+  }
+);
+
+
+dropzone.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.key === "Enter" ||
+      event.key === " "
+    ) {
+
+      event.preventDefault();
+
+      fileInput.click();
 
     }
 
-    $("file").click();
-
   }
 );
 
 
-$("file").addEventListener(
+fileInput.addEventListener(
   "change",
-  event=>{
+  event => {
 
     const file =
       event.target.files?.[0];
 
-    if(file){
-
+    if (file) {
       handleFile(file);
-
     }
 
   }
 );
 
 
-/* =========================================================
-   DRAG & DROP
-   ========================================================= */
+/* ============================================================
+   DRAG / DROP
+   ============================================================ */
 
-$("drop").addEventListener(
-  "dragover",
-  event=>{
+[
+  "dragenter",
+  "dragover"
+].forEach(eventName => {
 
-    event.preventDefault();
+  dropzone.addEventListener(
+    eventName,
+    event => {
 
-    $("drop")
-      .classList
-      .add("drag");
+      event.preventDefault();
 
-  }
-);
+      dropzone.classList.add(
+        "dragging"
+      );
+
+    }
+  );
+
+});
 
 
-$("drop").addEventListener(
+[
   "dragleave",
-  ()=>{
+  "drop"
+].forEach(eventName => {
 
-    $("drop")
-      .classList
-      .remove("drag");
+  dropzone.addEventListener(
+    eventName,
+    event => {
 
-  }
-);
+      event.preventDefault();
+
+      dropzone.classList.remove(
+        "dragging"
+      );
+
+    }
+  );
+
+});
 
 
-$("drop").addEventListener(
+dropzone.addEventListener(
   "drop",
-  event=>{
-
-    event.preventDefault();
-
-    $("drop")
-      .classList
-      .remove("drag");
+  event => {
 
     const file =
       event.dataTransfer.files?.[0];
 
-    if(file){
+    if (
+      file &&
+      (
+        file.type.startsWith("audio/") ||
+        /\.(wav|mp3|flac|m4a|ogg|webm)$/i
+          .test(file.name)
+      )
+    ) {
 
       handleFile(file);
+
+    } else {
+
+      toast(
+        "Format audio non reconnu."
+      );
 
     }
 
@@ -1614,146 +2259,105 @@ $("drop").addEventListener(
 );
 
 
-/* =========================================================
-   MAIN FILE HANDLER
-   ========================================================= */
+/* ============================================================
+   LOAD AUDIO FILE
+   ============================================================ */
 
-async function handleFile(file){
+async function handleFile(file) {
 
-  if(
-    !file.type.startsWith("audio/")
-  ){
-
-    toast(
-      "Ce fichier n'est pas un fichier audio."
-    );
-
-    return;
-
-  }
-
-  try{
-
-    toast("Décodage audio…");
+  try {
 
     setStatus(
-      $("audioDot"),
-      $("audioStatus"),
-      "Décodage du fichier…",
-      "busy"
+      "Chargement et décodage audio…"
     );
 
-    const context =
-      await getAudioContext();
-
-    const data =
-      await file.arrayBuffer();
-
-    state.buffer =
-      await context.decodeAudioData(
-        data
-      );
-
-    $("dropTitle").textContent =
+    dropTitle.textContent =
       file.name;
 
-    $("dropSub").textContent =
-      `${formatTime(state.buffer.duration)} · ${state.buffer.sampleRate} Hz`;
+    dropSubtitle.textContent =
+      "Préparation de l'analyse…";
 
-    $("duration").textContent =
-      formatTime(
-        state.buffer.duration
-      );
-
-    $("sampleRate").textContent =
-      `${state.buffer.sampleRate} Hz`;
-
-    $("channels").textContent =
-      state.buffer.numberOfChannels;
-
-    $("rms").textContent =
-      calculateRMS(
-        state.buffer
-      ).toFixed(4);
-
-    $("waveWrap").style.display =
-      "block";
-
-    drawWaveform(
-      state.buffer
+    fileInfo.classList.add(
+      "visible"
     );
 
-    /*
-      Analyse musicale locale.
-    */
+    fileInfo.innerHTML =
+      `<strong>${escapeHTML(file.name)}</strong>
+       · ${(file.size / 1024 / 1024).toFixed(2)} MB
+       · ${escapeHTML(file.type || "audio")}`;
 
-    const analysis =
-      analyzeAudio(
-        state.buffer
-      );
+    const context =
+      getAudioContext();
 
-    state.analysis =
-      analysis;
+    if (
+      context.state === "suspended"
+    ) {
 
-    $("key").textContent =
-      analysis.key;
-
-    $("tempo").textContent =
-      `${analysis.bpm} BPM`;
-
-    $("meter").textContent =
-      `${analysis.meter}/4`;
-
-    $("confidence").textContent =
-      `${Math.round(
-        analysis.confidence*100
-      )}%`;
-
-    drawFingerprint(
-      state.buffer
-    );
-
-    setStatus(
-      $("audioDot"),
-      $("audioStatus"),
-      "Analyse locale terminée",
-      "ok"
-    );
-
-    renderSourcePanel();
-
-    toast(
-      "Analyse terminée."
-    );
-
-    /*
-      Pour éviter une interface bloquée sur
-      des fichiers gigantesques.
-    */
-
-    if(
-      state.buffer.duration <= 180
-    ){
-
-      await transcribe();
-
-    }else{
-
-      toast(
-        "Audio long : lance la transcription manuellement."
-      );
+      await context.resume();
 
     }
 
-  }catch(error){
+    const arrayBuffer =
+      await file.arrayBuffer();
+
+    state.audioBuffer =
+      await context.decodeAudioData(
+        arrayBuffer.slice(0)
+      );
+
+    state.duration =
+      state.audioBuffer.duration;
+
+    state.sampleRate =
+      state.audioBuffer.sampleRate;
+
+    state.notes = [];
+
+    state.originalNotes = [];
+
+    state.musicXML = "";
+
+    durationValue.textContent =
+      formatDuration(
+        state.duration
+      );
+
+    waveContainer.classList.add(
+      "visible"
+    );
+
+    drawWaveform(
+      state.audioBuffer
+    );
+
+    drawSpectrogram(
+      state.audioBuffer
+    );
+
+    await analyzeAudio(
+      state.audioBuffer
+    );
+
+    await transcribeMelody(
+      state.audioBuffer
+    );
+
+    setStatus(
+      "Analyse terminée.",
+      false
+    );
+
+    toast(
+      "Analyse audio terminée."
+    );
+
+  } catch (error) {
 
     console.error(error);
 
     setStatus(
-      $("audioDot"),
-      $("audioStatus"),
-      "Erreur de décodage",
-      "error"
+      "Une erreur est survenue.",
+      false
     );
 
     toast(
@@ -1765,263 +2369,176 @@ async function handleFile(file){
 }
 
 
-/* =========================================================
-   FORMAT TIME
-   ========================================================= */
+/* ============================================================
+   ESCAPE HTML
+   ============================================================ */
 
-function formatTime(seconds){
+function escapeHTML(value) {
 
-  const minutes =
-    Math.floor(
-      seconds/60
-    );
-
-  const remaining =
-    Math.floor(
-      seconds%60
-    );
-
-  return (
-    String(minutes)
-      .padStart(2,"0")
-    +
-    ":"
-    +
-    String(remaining)
-      .padStart(2,"0")
-  );
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 
 }
 
 
-/* =========================================================
-   MONO CONVERSION
-   ========================================================= */
-
-function getMono(buffer){
-
-  const length =
-    buffer.length;
-
-  const channels =
-    buffer.numberOfChannels;
-
-  if(channels===1){
-
-    return buffer.getChannelData(0);
-
-  }
-
-  const result =
-    new Float32Array(
-      length
-    );
-
-  for(
-    let channel=0;
-    channel<channels;
-    channel++
-  ){
-
-    const data =
-      buffer.getChannelData(
-        channel
-      );
-
-    for(
-      let i=0;
-      i<length;
-      i++
-    ){
-
-      result[i] +=
-        data[i]/channels;
-
-    }
-
-  }
-
-  return result;
-
-}
-
-
-/* =========================================================
-   RMS
-   ========================================================= */
-
-function calculateRMS(buffer){
-
-  const data =
-    getMono(buffer);
-
-  const step =
-    Math.max(
-      1,
-      Math.floor(
-        data.length/250000
-      )
-    );
-
-  let sum=0;
-  let count=0;
-
-  for(
-    let i=0;
-    i<data.length;
-    i+=step
-  ){
-
-    const value =
-      data[i];
-
-    sum +=
-      value*value;
-
-    count++;
-
-  }
-
-  return Math.sqrt(
-    sum/
-    Math.max(
-      1,
-      count
-    )
-  );
-
-}
-
-
-/* =========================================================
+/* ============================================================
    WAVEFORM
-   ========================================================= */
+   ============================================================ */
 
-function drawWaveform(buffer){
+function drawWaveform(buffer) {
 
   const canvas =
-    $("wave");
+    waveformCanvas;
 
   const rect =
     canvas.getBoundingClientRect();
 
-  const dpr =
-    Math.min(
-      window.devicePixelRatio || 1,
-      2
-    );
-
-  canvas.width =
+  const width =
     Math.max(
-      300,
-      rect.width*dpr
+      320,
+      Math.floor(
+        rect.width *
+        Math.min(
+          window.devicePixelRatio || 1,
+          2
+        )
+      )
     );
 
-  canvas.height =
-    110*dpr;
+  const height =
+    Math.floor(
+      130 *
+      Math.min(
+        window.devicePixelRatio || 1,
+        2
+      )
+    );
 
-  const context =
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx =
     canvas.getContext("2d");
 
-  context.clearRect(
+  ctx.clearRect(
     0,
     0,
-    canvas.width,
-    canvas.height
+    width,
+    height
+  );
+
+  ctx.fillStyle =
+    "#0e0e10";
+
+  ctx.fillRect(
+    0,
+    0,
+    width,
+    height
   );
 
   const data =
-    getMono(buffer);
-
-  const width =
-    canvas.width;
-
-  const height =
-    canvas.height;
+    buffer.getChannelData(0);
 
   const step =
     Math.max(
       1,
       Math.floor(
-        data.length/width
+        data.length / width
       )
     );
 
-  context.strokeStyle =
-    "#e6c36a";
+  const mid =
+    height / 2;
 
-  context.lineWidth =
-    Math.max(
-      1,
-      dpr
-    );
+  ctx.beginPath();
 
-  context.beginPath();
-
-  for(
-    let x=0;
-    x<width;
+  for (
+    let x = 0;
+    x < width;
     x++
-  ){
-
-    let minimum=1;
-    let maximum=-1;
+  ) {
 
     const start =
-      x*step;
+      x * step;
 
-    const end =
-      Math.min(
-        data.length,
-        start+step
-      );
+    let min = 1;
+    let max = -1;
 
-    for(
-      let i=start;
-      i<end;
+    for (
+      let i = 0;
+      i < step &&
+      start + i < data.length;
       i++
-    ){
+    ) {
 
       const value =
-        data[i];
+        data[start + i];
 
-      if(value<minimum)
-        minimum=value;
+      if (value < min) {
+        min = value;
+      }
 
-      if(value>maximum)
-        maximum=value;
+      if (value > max) {
+        max = value;
+      }
 
     }
 
-    context.moveTo(
+    ctx.moveTo(
       x,
-      height/2+
-      minimum*
-      height*.38
+      mid + min * mid * .8
     );
 
-    context.lineTo(
+    ctx.lineTo(
       x,
-      height/2+
-      maximum*
-      height*.38
+      mid + max * mid * .8
     );
 
   }
 
-  context.stroke();
+  ctx.strokeStyle =
+    "#e6c36a";
+
+  ctx.lineWidth = 1;
+
+  ctx.stroke();
+
+
+  /* Center line */
+
+  ctx.strokeStyle =
+    "rgba(255,255,255,.06)";
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    0,
+    mid
+  );
+
+  ctx.lineTo(
+    width,
+    mid
+  );
+
+  ctx.stroke();
 
 }
 
 
-/* =========================================================
-   SPECTRUM
-   ========================================================= */
+/* ============================================================
+   SPECTROGRAM
+   ============================================================ */
 
-function drawFingerprint(buffer){
+function drawSpectrogram(buffer) {
 
   const canvas =
-    $("fingerprint");
+    spectrogramCanvas;
 
   const rect =
     canvas.getBoundingClientRect();
@@ -2032,120 +2549,163 @@ function drawFingerprint(buffer){
       2
     );
 
-  canvas.width =
-    Math.max(
-      600,
-      rect.width*dpr
-    );
-
-  canvas.height =
-    190*dpr;
-
-  const context =
-    canvas.getContext("2d");
-
-  context.fillStyle =
-    "#0b0b0d";
-
-  context.fillRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
-  const data =
-    getMono(buffer);
-
   const width =
-    canvas.width;
-
-  const height =
-    canvas.height;
-
-  const fftSize =
-    1024;
-
-  const columns =
-    Math.min(
-      400,
-      Math.max(
-        100,
-        Math.floor(width)
+    Math.max(
+      320,
+      Math.floor(
+        rect.width * dpr
       )
     );
 
-  const usable =
-    Math.max(
-      1,
-      data.length-
-      fftSize
+  const height =
+    Math.floor(
+      190 * dpr
     );
 
-  for(
-    let column=0;
-    column<columns;
-    column++
-  ){
+  canvas.width =
+    width;
 
-    const position =
+  canvas.height =
+    height;
+
+  const ctx =
+    canvas.getContext("2d");
+
+  ctx.fillStyle =
+    "#09090a";
+
+  ctx.fillRect(
+    0,
+    0,
+    width,
+    height
+  );
+
+
+  const channel =
+    buffer.getChannelData(0);
+
+  const fftSize = 1024;
+
+  const hop =
+    Math.max(
+      512,
       Math.floor(
-        column/
-        Math.max(
-          1,
-          columns-1
-        )*
-        usable
+        channel.length /
+        width
+      )
+    );
+
+
+  const complex = new Float32Array(
+    fftSize
+  );
+
+
+  for (
+    let x = 0;
+    x < width;
+    x++
+  ) {
+
+    const sourceIndex =
+      Math.floor(
+        x *
+        channel.length /
+        width
       );
 
-    const spectrum =
-      magnitudeSpectrum(
-        data,
-        position,
-        fftSize
-      );
+    for (
+      let i = 0;
+      i < fftSize;
+      i++
+    ) {
 
-    for(
-      let y=0;
-      y<height;
-      y+=2
-    ){
+      const index =
+        sourceIndex + i;
 
-      const normalized =
-        1-
-        y/height;
+      const sample =
+        index < channel.length
+          ? channel[index]
+          : 0;
 
-      const bin =
+      /*
+       * Hann window.
+       */
+
+      const window =
+        .5 *
+        (
+          1 -
+          Math.cos(
+            2 *
+            Math.PI *
+            i /
+            (fftSize - 1)
+          )
+        );
+
+      complex[i] =
+        sample * window;
+
+    }
+
+
+    const magnitudes =
+      simpleFFT(complex);
+
+
+    for (
+      let y = 0;
+      y < height;
+      y++
+    ) {
+
+      const frequencyBin =
         Math.floor(
-          normalized*
-          (spectrum.length-1)
+          (
+            1 -
+            y / height
+          ) *
+          (magnitudes.length - 1)
         );
 
       const magnitude =
-        Math.pow(
-          spectrum[bin],
-          .35
+        magnitudes[
+          frequencyBin
+        ] || 0;
+
+      const db =
+        20 *
+        Math.log10(
+          magnitude + 1e-8
         );
 
-      const light =
-        4+
-        magnitude*60;
+      const normalized =
+        clamp(
+          (
+            db + 75
+          ) / 75,
+          0,
+          1
+        );
 
       const hue =
-        35+
-        magnitude*35;
+        40 -
+        normalized * 30;
 
-      context.fillStyle =
-        `hsl(${hue},70%,${light}%)`;
+      const light =
+        4 +
+        normalized * 48;
 
-      context.fillRect(
-        column*
-          (width/columns),
+      ctx.fillStyle =
+        `hsl(${hue}, 65%, ${light}%)`;
+
+      ctx.fillRect(
+        x,
         y,
-        Math.ceil(
-          width/columns
-        )+1,
-        2
+        1,
+        1
       );
 
     }
@@ -2155,47 +2715,36 @@ function drawFingerprint(buffer){
 }
 
 
-/* =========================================================
-   FFT-LIKE SPECTRUM
-   ========================================================= */
+/* ============================================================
+   SIMPLE FFT MAGNITUDE
+   ============================================================ */
 
-function magnitudeSpectrum(
-  data,
-  start,
-  size
-){
+function simpleFFT(signal) {
 
-  const real =
-    new Float32Array(size);
+  const N =
+    signal.length;
 
-  const imaginary =
-    new Float32Array(size);
+  const half =
+    N >> 1;
 
-  for(
-    let i=0;
-    i<size;
-    i++
-  ){
+  const magnitudes =
+    new Float32Array(
+      half
+    );
 
-    const sample =
-      data[start+i] || 0;
-
-    const window =
-      .5-
-      .5*
-      Math.cos(
-        2*Math.PI*i/
-        (size-1)
-      );
-
-    real[i] =
-      sample*window;
-
-  }
+  /*
+   * For a portable single-file browser version,
+   * this implementation samples the spectrum using
+   * a direct DFT at selected bins.
+   *
+   * A production build should replace this with
+   * WebAssembly/WebGL FFT.
+   */
 
   const bins =
-    Math.floor(
-      size/2
+    Math.min(
+      half,
+      256
     );
 
   const output =
@@ -2203,62 +2752,54 @@ function magnitudeSpectrum(
       bins
     );
 
-  /*
-    DFT partielle.
-    Elle est volontairement simple afin que le fichier
-    reste totalement autonome.
-
-    Pour une V4 lourde :
-    FFT WASM / WebGPU.
-  */
-
-  for(
-    let k=0;
-    k<bins;
+  for (
+    let k = 0;
+    k < bins;
     k++
-  ){
+  ) {
 
-    let realPart=0;
-    let imaginaryPart=0;
+    let real = 0;
+    let imag = 0;
 
-    const angle =
-      -2*Math.PI*k/size;
+    const frequency =
+      k / N;
 
-    /*
-      Sous-échantillonnage x4
-      pour préserver la fluidité.
-    */
+    const stride =
+      Math.max(
+        1,
+        Math.floor(
+          N / 256
+        )
+      );
 
-    for(
-      let n=0;
-      n<size;
-      n+=4
-    ){
+    for (
+      let n = 0;
+      n < N;
+      n += stride
+    ) {
 
       const phase =
-        angle*n;
+        2 *
+        Math.PI *
+        frequency *
+        n;
 
-      const value =
-        real[n];
-
-      realPart +=
-        value*
+      real +=
+        signal[n] *
         Math.cos(phase);
 
-      imaginaryPart +=
-        value*
+      imag -=
+        signal[n] *
         Math.sin(phase);
 
     }
 
     output[k] =
       Math.sqrt(
-        realPart*
-        realPart+
-        imaginaryPart*
-        imaginaryPart
-      )/
-      (size/4);
+        real * real +
+        imag * imag
+      ) /
+      (N / stride);
 
   }
 
@@ -2267,135 +2808,151 @@ function magnitudeSpectrum(
 }
 
 
-/* =========================================================
+/* ============================================================
    AUDIO ANALYSIS
-   ========================================================= */
+   ============================================================ */
 
-function analyzeAudio(buffer){
+async function analyzeAudio(
+  buffer
+) {
 
-  const data =
-    getMono(buffer);
+  setStatus(
+    "Analyse spectrale et estimation du tempo…"
+  );
 
-  const bpm =
-    estimateTempo(
-      data,
-      buffer.sampleRate
-    );
+  const tempo =
+    estimateTempo(buffer);
 
-  const chroma =
-    estimateChroma(
-      data,
-      buffer.sampleRate
-    );
+  state.tempo =
+    tempo;
+
+  tempoValue.textContent =
+    tempo
+      ? `${Math.round(tempo)} BPM`
+      : "—";
+
 
   const key =
-    detectKey(
-      chroma
-    );
+    estimateKey(buffer);
+
+  state.key =
+    key;
+
+  keyValue.textContent =
+    key;
+
+
+  /*
+   * Local browser confidence.
+   *
+   * This is deliberately labelled analytical confidence,
+   * not a claimed Shazam identification probability.
+   */
 
   const confidence =
-    Math.min(
-      .98,
-      Math.max(
-        .40,
-        chroma.confidence*.65+
-        tempoConfidence(bpm)*.35
-      )
+    clamp(
+      60 +
+      (
+        buffer.duration > 2
+          ? 15
+          : 0
+      ) +
+      (
+        tempo
+          ? 10
+          : 0
+      ),
+      0,
+      95
     );
 
-  return {
+  state.confidence =
+    confidence;
 
-    bpm,
+  confidenceText.textContent =
+    `${Math.round(confidence)}%`;
 
-    key,
-
-    meter:4,
-
-    confidence
-
-  };
+  confidenceBar.style.width =
+    `${confidence}%`;
 
 }
 
 
-/* =========================================================
-   TEMPO
-   ========================================================= */
+/* ============================================================
+   TEMPO ESTIMATION
+   ============================================================ */
 
-function estimateTempo(
-  data,
-  sampleRate
-){
+function estimateTempo(buffer) {
 
-  const block =
+  const data =
+    buffer.getChannelData(0);
+
+  const sampleRate =
+    buffer.sampleRate;
+
+  /*
+   * Downsample envelope.
+   */
+
+  const targetRate = 200;
+
+  const ratio =
     Math.max(
       1,
       Math.floor(
-        sampleRate*.02
+        sampleRate /
+        targetRate
       )
     );
 
-  const envelope=[];
+  const envelope = [];
 
-  for(
-    let start=0;
-    start+block<data.length;
-    start+=block
-  ){
-
-    let sum=0;
-
-    for(
-      let i=0;
-      i<block;
-      i+=4
-    ){
-
-      const value =
-        data[start+i] || 0;
-
-      sum +=
-        value*value;
-
-    }
+  for (
+    let i = 0;
+    i < data.length;
+    i += ratio
+  ) {
 
     envelope.push(
-      Math.sqrt(
-        sum/
-        Math.max(
-          1,
-          block/4
-        )
+      Math.abs(
+        data[i]
       )
     );
-
-    /*
-      Limite CPU.
-    */
-
-    if(
-      envelope.length>12000
-    ){
-
-      break;
-
-    }
 
   }
 
+
+  /*
+   * Smooth envelope.
+   */
+
+  const smooth =
+    movingAverage(
+      envelope,
+      5
+    );
+
+
+  /*
+   * Autocorrelation for BPM range
+   * approximately 60–180 BPM.
+   */
+
+  const minBPM = 60;
+  const maxBPM = 180;
+
   const minLag =
-    Math.max(
-      1,
-      Math.floor(
-        60/
-        (220*.02)
-      )
+    Math.floor(
+      targetRate *
+      60 /
+      maxBPM
     );
 
   const maxLag =
     Math.floor(
-      60/
-      (40*.02)
+      targetRate *
+      60 /
+      minBPM
     );
 
   let bestLag =
@@ -2404,37 +2961,30 @@ function estimateTempo(
   let bestScore =
     -Infinity;
 
-  const usableMax =
-    Math.min(
-      maxLag,
-      Math.floor(
-        envelope.length/2
-      )
-    );
-
-  for(
-    let lag=minLag;
-    lag<=usableMax;
+  for (
+    let lag = minLag;
+    lag <= maxLag;
     lag++
-  ){
+  ) {
 
-    let score=0;
+    let score = 0;
 
-    for(
-      let i=lag;
-      i<envelope.length;
+    for (
+      let i = lag;
+      i < smooth.length;
       i++
-    ){
+    ) {
 
       score +=
-        envelope[i]*
-        envelope[i-lag];
+        smooth[i] *
+        smooth[i - lag];
 
     }
 
-    if(
-      score>bestScore
-    ){
+    if (
+      score >
+      bestScore
+    ) {
 
       bestScore =
         score;
@@ -2446,1985 +2996,57 @@ function estimateTempo(
 
   }
 
-  let bpm =
-    60/
-    (
-      bestLag*.02
-    );
 
-  while(
-    bpm<70
-  ){
-
-    bpm*=2;
-
-  }
-
-  while(
-    bpm>180
-  ){
-
-    bpm/=2;
-
-  }
-
-  return Math.round(
-    bpm
-  );
-
-}
-
-
-function tempoConfidence(bpm){
-
-  if(
-    bpm>=80 &&
-    bpm<=160
-  ){
-
-    return .8;
-
-  }
-
-  return .55;
-
-}
-
-
-/* =========================================================
-   CHROMA
-   ========================================================= */
-
-function estimateChroma(
-  data,
-  sampleRate
-){
-
-  const chroma =
-    new Float64Array(12);
-
-  const fftSize =
-    2048;
-
-  const hop =
-    1024;
-
-  const maxSamples =
-    Math.min(
-      data.length,
-      sampleRate*90
-    );
-
-  let frames=0;
-
-  for(
-    let start=0;
-    start+fftSize<maxSamples;
-    start+=hop
-  ){
-
-    const spectrum =
-      magnitudeSpectrum(
-        data,
-        start,
-        fftSize
-      );
-
-    for(
-      let bin=2;
-      bin<spectrum.length;
-      bin++
-    ){
-
-      const frequency =
-        bin*
-        sampleRate/
-        fftSize;
-
-      if(
-        frequency<55 ||
-        frequency>5000
-      ){
-
-        continue;
-
-      }
-
-      const midi =
-        69+
-        12*
-        Math.log2(
-          frequency/440
-        );
-
-      const note =
-        Math.round(midi)%12;
-
-      if(
-        note>=0 &&
-        note<12
-      ){
-
-        chroma[note] +=
-          spectrum[bin]/
-          Math.sqrt(
-            frequency
-          );
-
-      }
-
-    }
-
-    frames++;
-
-    /*
-      Protection CPU.
-    */
-
-    if(
-      frames>=250
-    ){
-
-      break;
-
-    }
-
-  }
-
-  let total=0;
-  let maximum=0;
-
-  for(
-    const value of chroma
-  ){
-
-    total+=value;
-
-    maximum =
-      Math.max(
-        maximum,
-        value
-      );
-
-  }
-
-  return {
-
-    values:chroma,
-
-    confidence:
-      total>0
-      ? Math.min(
-          1,
-          maximum/
-          total*
-          4
-        )
-      : .2
-
-  };
-
-}
-
-
-/* =========================================================
-   KEY DETECTION
-   ========================================================= */
-
-function detectKey(
-  chromaData
-){
-
-  const values =
-    Array.from(
-      chromaData.values
-    );
-
-  const majorProfile=[
-
-    6.35,
-    2.23,
-    3.48,
-    2.33,
-    4.38,
-    4.09,
-    2.52,
-    5.19,
-    2.39,
-    3.66,
-    2.29,
-    2.88
-
-  ];
-
-  const minorProfile=[
-
-    6.33,
-    2.68,
-    3.52,
-    5.38,
-    2.60,
-    3.53,
-    2.54,
-    4.75,
-    3.98,
-    2.69,
-    3.34,
-    3.17
-
-  ];
-
-  let best={
-    score:-Infinity,
-    root:0,
-    mode:"major"
-  };
-
-  for(
-    let root=0;
-    root<12;
-    root++
-  ){
-
-    for(
-      const [
-        profile,
-        mode
-      ]
-      of [
-        [majorProfile,"major"],
-        [minorProfile,"minor"]
-      ]
-    ){
-
-      let score=0;
-
-      for(
-        let i=0;
-        i<12;
-        i++
-      ){
-
-        score +=
-          values[
-            (i+root)%12
-          ]*
-          profile[i];
-
-      }
-
-      if(
-        score>best.score
-      ){
-
-        best={
-          score,
-          root,
-          mode
-        };
-
-      }
-
-    }
-
+  if (!bestLag) {
+    return 0;
   }
 
   return (
-    NOTE_NAMES[best.root]
-    +
-    (
-      best.mode==="major"
-      ? " Majeur"
-      : " mineur"
-    )
+    60 *
+    targetRate /
+    bestLag
   );
 
 }
 
 
-/* =========================================================
-   SOURCE PANEL
-   ========================================================= */
-
-function renderSourcePanel(){
-
-  $("stems").innerHTML=`
-
-    <div class="stem">
-
-      <div>
-
-        <div class="stem-name">
-          AUDIO ORIGINAL
-        </div>
-
-        <div class="stem-info">
-          Source chargée dans le navigateur
-        </div>
-
-      </div>
-
-      <button
-        id="sourcePlay"
-        type="button"
-      >
-        ▶ PLAY
-      </button>
-
-    </div>
-
-    <div class="stem">
-
-      <div>
-
-        <div class="stem-name">
-          SÉPARATION MUSICALE
-        </div>
-
-        <div class="stem-info">
-          Module Demucs / ONNX / WebGPU
-        </div>
-
-      </div>
-
-      <button
-        id="separateBtn"
-        type="button"
-      >
-        ANALYSER
-      </button>
-
-    </div>
-
-  `;
-
-  $("sourcePlay").onclick =
-    playOriginal;
-
-  $("separateBtn").onclick =
-    requestSeparation;
-
-}
-
-
-/* =========================================================
-   PLAY ORIGINAL
-   ========================================================= */
-
-async function playOriginal(){
-
-  if(!state.buffer){
-
-    toast(
-      "Charge d'abord un morceau."
-    );
-
-    return;
-
-  }
-
-  const context =
-    await getAudioContext();
-
-  if(
-    state.sourceNode
-  ){
-
-    try{
-
-      state.sourceNode.stop();
-
-    }catch{}
-
-  }
-
-  const source =
-    context.createBufferSource();
-
-  source.buffer =
-    state.buffer;
-
-  source.connect(
-    context.destination
-  );
-
-  source.start();
-
-  state.sourceNode =
-    source;
-
-  toast(
-    "Lecture…"
-  );
-
-}
-
-
-$("playBtn").onclick =
-  playOriginal;
-
-
-/* =========================================================
-   OPTIONAL SEPARATION
-   =========================================================
-
-   GitHub Pages ne fournit pas de serveur.
-
-   Ce bouton tente donc de contacter :
-
-      /api/separate
-
-   Si aucun backend n'existe, aucune fausse séparation
-   n'est affichée.
-   ========================================================= */
-
-async function requestSeparation(){
-
-  if(!state.buffer){
-
-    toast(
-      "Aucun audio chargé."
-    );
-
-    return;
-
-  }
-
-  setStatus(
-    $("sepDot"),
-    $("sepStatus"),
-    "Moteur de séparation…",
-    "busy"
-  );
-
-  try{
-
-    const response =
-      await fetch(
-        "/api/separate",
-        {
-          method:"POST"
-        }
-      );
-
-    if(
-      !response.ok
-    ){
-
-      throw new Error(
-        "Backend indisponible"
-      );
-
-    }
-
-    const result =
-      await response.json();
-
-    if(
-      !Array.isArray(
-        result.stems
-      )
-    ){
-
-      throw new Error(
-        "Réponse invalide"
-      );
-
-    }
-
-    renderSeparatedStems(
-      result.stems
-    );
-
-    setStatus(
-      $("sepDot"),
-      $("sepStatus"),
-      "Séparation terminée",
-      "ok"
-    );
-
-  }catch(error){
-
-    console.info(
-      error.message
-    );
-
-    setStatus(
-      $("sepDot"),
-      $("sepStatus"),
-      "Moteur de séparation non configuré"
-    );
-
-    toast(
-      "Demucs doit être branché à un backend pour cette fonction."
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   SEPARATED STEMS
-   ========================================================= */
-
-function renderSeparatedStems(
-  stems
-){
-
-  if(
-    !stems.length
-  ){
-
-    return;
-
-  }
-
-  $("stems").innerHTML =
-    stems.map(
-      (stem,index)=>`
-
-        <div class="stem">
-
-          <div>
-
-            <div class="stem-name">
-
-              ${escapeHTML(
-                stem.name ||
-                `STEM ${index+1}`
-              ).toUpperCase()}
-
-            </div>
-
-            <div class="stem-info">
-              Source séparée
-            </div>
-
-          </div>
-
-          <button
-            type="button"
-            data-stem="${escapeHTML(
-              stem.url || ""
-            )}"
-          >
-            ▶ SOLO
-          </button>
-
-        </div>
-
-      `
-    ).join("");
-
-  $("stems")
-    .querySelectorAll(
-      "[data-stem]"
-    )
-    .forEach(
-      button=>{
-
-        button.onclick =
-          async()=>{
-
-            const url =
-              button.dataset.stem;
-
-            if(!url){
-
-              return;
-
-            }
-
-            const audio =
-              new Audio(url);
-
-            await audio.play();
-
-          };
-
-      }
-    );
-
-}
-
-
-/* =========================================================
-   TRANSCRIPTION
-   ========================================================= */
-
-$("transcribeBtn").onclick =
-  transcribe;
-
-
-async function transcribe(){
-
-  if(!state.buffer){
-
-    toast(
-      "Charge d'abord un morceau."
-    );
-
-    return;
-
-  }
-
-  setStatus(
-    $("transDot"),
-    $("transStatus"),
-    "Transcription en cours…",
-    "busy"
-  );
-
-  setProgress(
-    3
-  );
-
-  try{
-
-    /*
-      Première possibilité :
-      véritable moteur distant.
-
-      Endpoint facultatif :
-
-        POST /api/transcribe
-
-      Réponse :
-
-        {
-          "notes":[
-            {
-              "pitch":60,
-              "start":0,
-              "dur":1,
-              "velocity":90
-            }
-          ]
-        }
-    */
-
-    const advanced =
-      await tryAdvancedTranscription();
-
-    if(
-      advanced &&
-      Array.isArray(
-        advanced.notes
-      ) &&
-      advanced.notes.length
-    ){
-
-      state.notes =
-        normalizeNotes(
-          advanced.notes
-        );
-
-    }else{
-
-      /*
-        Fallback local.
-
-        Il est particulièrement adapté
-        à une mélodie monophonique / voix / instrument solo.
-      */
-
-      state.notes =
-        await transcribeMonophonic(
-          state.buffer
-        );
-
-    }
-
-    setProgress(
-      100
-    );
-
-    renderScore(
-      state.notes
-    );
-
-    setStatus(
-      $("transDot"),
-      $("transStatus"),
-      `${state.notes.length} notes détectées`,
-      "ok"
-    );
-
-    toast(
-      `Transcription terminée · ${state.notes.length} notes`
-    );
-
-    setTimeout(
-      ()=>{
-        setProgress(
-          0,
-          false
-        );
-      },
-      500
-    );
-
-  }catch(error){
-
-    console.error(error);
-
-    setStatus(
-      $("transDot"),
-      $("transStatus"),
-      "Erreur de transcription",
-      "error"
-    );
-
-    setProgress(
-      0,
-      false
-    );
-
-    toast(
-      "La transcription a échoué."
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   ADVANCED TRANSCRIPTION HOOK
-   ========================================================= */
-
-async function tryAdvancedTranscription(){
-
-  try{
-
-    const response =
-      await fetch(
-        "/api/transcribe",
-        {
-          method:"POST"
-        }
-      );
-
-    if(
-      !response.ok
-    ){
-
-      return null;
-
-    }
-
-    return await response.json();
-
-  }catch{
-
-    return null;
-
-  }
-
-}
-
-
-/* =========================================================
-   LOCAL TRANSCRIPTION
-   ========================================================= */
-
-async function transcribeMonophonic(
-  buffer
-){
-
-  const data =
-    getMono(buffer);
-
-  const sampleRate =
-    buffer.sampleRate;
-
-  const frame =
-    Math.floor(
-      sampleRate*.09
-    );
-
-  const hop =
-    Math.floor(
-      sampleRate*.045
-    );
-
-  const raw=[];
-
-  const maximumFrames =
-    Math.min(
-      Math.floor(
-        (data.length-frame)/hop
-      ),
-      5000
-    );
-
-  for(
-    let frameIndex=0;
-    frameIndex<maximumFrames;
-    frameIndex++
-  ){
-
-    const offset =
-      frameIndex*hop;
-
-    const pitch =
-      detectPitchYIN(
-        data,
-        offset,
-        frame,
-        sampleRate
-      );
-
-    raw.push({
-
-      time:
-        offset/sampleRate,
-
-      midi:
-        pitch
-
-    });
-
-    if(
-      frameIndex%15===0
-    ){
-
-      setProgress(
-        10+
-        (
-          frameIndex/
-          maximumFrames
-        )*
-        80
-      );
-
-      await nextFrame();
-
-    }
-
-  }
-
-  return quantizePitchContour(
-    raw,
-    state.analysis?.bpm || 100
-  );
-
-}
-
-
-/* =========================================================
-   YIN PITCH DETECTION
-   ========================================================= */
-
-function detectPitchYIN(
-  data,
-  start,
-  size,
-  sampleRate
-){
-
-  const minFrequency =
-    65;
-
-  const maxFrequency =
-    1200;
-
-  const minTau =
-    Math.floor(
-      sampleRate/
-      maxFrequency
-    );
-
-  const maxTau =
-    Math.min(
-      Math.floor(
-        sampleRate/
-        minFrequency
-      ),
-      Math.floor(
-        size/2
-      )-1
-    );
-
-  const difference =
+function movingAverage(
+  array,
+  radius
+) {
+
+  const result =
     new Float32Array(
-      maxTau+1
+      array.length
     );
 
-  for(
-    let tau=minTau;
-    tau<=maxTau;
-    tau++
-  ){
-
-    let sum=0;
-
-    for(
-      let i=0;
-      i<size/2;
-      i+=2
-    ){
-
-      const a =
-        data[start+i] || 0;
-
-      const b =
-        data[start+i+tau] || 0;
-
-      const differenceValue =
-        a-b;
-
-      sum +=
-        differenceValue*
-        differenceValue;
-
-    }
-
-    difference[tau]=
-      sum;
-
-  }
-
-  let running=0;
-
-  let bestTau=-1;
-
-  let bestValue=
-    Infinity;
-
-  for(
-    let tau=minTau;
-    tau<=maxTau;
-    tau++
-  ){
-
-    running +=
-      difference[tau];
-
-    const normalized =
-      running===0
-      ? 1
-      : (
-        difference[tau]*
-        tau/
-        running
-      );
-
-    if(
-      tau>minTau+2 &&
-      normalized<.18 &&
-      normalized<bestValue
-    ){
-
-      bestValue =
-        normalized;
-
-      bestTau =
-        tau;
-
-    }
-
-  }
-
-  if(
-    bestTau<0
-  ){
-
-    return null;
-
-  }
-
-  /*
-    Energy gate.
-  */
-
-  let energy=0;
-
-  for(
-    let i=0;
-    i<size;
-    i+=4
-  ){
-
-    const value =
-      data[start+i] || 0;
-
-    energy +=
-      value*value;
-
-  }
-
-  energy /=
-    Math.max(
-      1,
-      Math.floor(
-        size/4
-      )
-    );
-
-  if(
-    energy<1e-5
-  ){
-
-    return null;
-
-  }
-
-  const frequency =
-    sampleRate/
-    bestTau;
-
-  if(
-    frequency<65 ||
-    frequency>1200
-  ){
-
-    return null;
-
-  }
-
-  return (
-    69+
-    12*
-    Math.log2(
-      frequency/440
-    )
-  );
-
-}
-
-
-/* =========================================================
-   QUANTIZATION
-   ========================================================= */
-
-function quantizePitchContour(
-  raw,
-  bpm
-){
-
-  const cleaned=[];
-
-  let previous=null;
-
-  for(
-    const frame of raw
-  ){
-
-    if(
-      frame.midi===null ||
-      !Number.isFinite(
-        frame.midi
-      )
-    ){
-
-      continue;
-
-    }
-
-    const midi =
-      Math.round(
-        frame.midi
-      );
-
-    if(
-      midi<24 ||
-      midi>108
-    ){
-
-      continue;
-
-    }
-
-    /*
-      Ignore les sauts totalement improbables.
-    */
-
-    if(
-      previous!==null &&
-      Math.abs(
-        midi-previous
-      )>12
-    ){
-
-      continue;
-
-    }
-
-    cleaned.push({
-
-      time:
-        frame.time,
-
-      midi
-
-    });
-
-    previous =
-      midi;
-
-  }
-
-  if(
-    !cleaned.length
-  ){
-
-    return [];
-
-  }
-
-  const notes=[];
-
-  let current={
-
-    pitch:
-      cleaned[0].midi,
-
-    start:
-      cleaned[0].time,
-
-    end:
-      cleaned[0].time
-
-  };
-
-  for(
-    let i=1;
-    i<cleaned.length;
+  let sum = 0;
+
+  for (
+    let i = 0;
+    i < array.length;
     i++
-  ){
+  ) {
 
-    const point =
-      cleaned[i];
+    sum += array[i];
 
-    const gap =
-      point.time-
-      current.end;
+    if (
+      i >= radius
+    ) {
 
-    if(
-      point.midi===
-      current.pitch &&
-      gap<.18
-    ){
-
-      current.end =
-        point.time;
-
-    }else{
-
-      if(
-        current.end-
-        current.start>=.10
-      ){
-
-        notes.push({
-
-          pitch:
-            current.pitch,
-
-          start:
-            current.start,
-
-          dur:
-            Math.max(
-              .10,
-              current.end-
-              current.start
-            ),
-
-          velocity:90
-
-        });
-
-      }
-
-      current={
-
-        pitch:
-          point.midi,
-
-        start:
-          point.time,
-
-        end:
-          point.time
-
-      };
+      sum -=
+        array[
+          i - radius
+        ];
 
     }
 
-  }
-
-  if(
-    current.end-
-    current.start>=.10
-  ){
-
-    notes.push({
-
-      pitch:
-        current.pitch,
-
-      start:
-        current.start,
-
-      dur:
-        Math.max(
-          .10,
-          current.end-
-          current.start
-        ),
-
-      velocity:90
-
-    });
-
-  }
-
-  /*
-    Quantification rythmique.
-  */
-
-  const beat =
-    60/
-    Math.max(
-      30,
-      bpm
-    );
-
-  const grid =
-    beat/4;
-
-  return notes.map(
-    note=>{
-
-      const start =
-        Math.round(
-          note.start/grid
-        )*
-        grid;
-
-      const end =
-        Math.max(
-          start+grid,
-          Math.round(
-            (
-              note.start+
-              note.dur
-            )/
-            grid
-          )*
-          grid
-        );
-
-      return {
-
-        pitch:
-          note.pitch,
-
-        start,
-
-        dur:
-          end-start,
-
-        velocity:
-          note.velocity
-
-      };
-
-    }
-  );
-
-}
-
-
-/* =========================================================
-   NORMALIZE ADVANCED NOTES
-   ========================================================= */
-
-function normalizeNotes(
-  notes
-){
-
-  return notes
-
-    .filter(
-      note=>
-        Number.isFinite(
-          note.pitch
-        ) &&
-        Number.isFinite(
-          note.start
-        ) &&
-        Number.isFinite(
-          note.dur
-        )
-    )
-
-    .map(
-      note=>({
-
-        pitch:
-          Math.round(
-            note.pitch
-          ),
-
-        start:
-          Math.max(
-            0,
-            note.start
-          ),
-
-        dur:
-          Math.max(
-            .05,
-            note.dur
-          ),
-
-        velocity:
-          Number.isFinite(
-            note.velocity
-          )
-          ? note.velocity
-          : 90
-
-      })
-    )
-
-    .sort(
-      (a,b)=>
-        a.start-b.start ||
-        a.pitch-b.pitch
-    );
-
-}
-
-
-/* =========================================================
-   SCORE
-   ========================================================= */
-
-function renderScore(
-  notes
-){
-
-  const container =
-    $("scoreCanvas");
-
-  if(
-    !notes.length
-  ){
-
-    container.className =
-      "score-empty";
-
-    container.innerHTML =
-      "Aucune note suffisamment fiable détectée.";
-
-    return;
-
-  }
-
-  container.className="";
-  container.innerHTML="";
-
-  const canvas =
-    document.createElement(
-      "canvas"
-    );
-
-  canvas.width =
-    Math.max(
-      1000,
+    result[i] =
+      sum /
       Math.min(
-        2600,
-        700+
-        notes.length*36
-      )
-    );
-
-  canvas.height =
-    430;
-
-  canvas.style.width =
-    "100%";
-
-  canvas.style.height =
-    "430px";
-
-  container.appendChild(
-    canvas
-  );
-
-  drawNotation(
-    canvas,
-    notes
-  );
-
-}
-
-
-/* =========================================================
-   SIMPLE MUSIC NOTATION
-   ========================================================= */
-
-function drawNotation(
-  canvas,
-  notes
-){
-
-  const context =
-    canvas.getContext("2d");
-
-  context.fillStyle =
-    "#fffdf8";
-
-  context.fillRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
-  const margin =
-    65;
-
-  const staffTop =
-    110;
-
-  const staffSpacing =
-    18;
-
-  /*
-    Header.
-  */
-
-  context.fillStyle =
-    "#333";
-
-  context.font =
-    "700 12px JetBrains Mono";
-
-  context.fillText(
-    state.analysis
-      ? `${state.analysis.key} · ${state.analysis.bpm} BPM`
-      : "Transcription",
-    margin,
-    27
-  );
-
-  context.font =
-    "italic 22px Instrument Serif";
-
-  context.fillText(
-    "ORCHESTRAi",
-    margin,
-    58
-  );
-
-  /*
-    Staff.
-  */
-
-  context.strokeStyle =
-    "#222";
-
-  context.lineWidth=1;
-
-  for(
-    let line=0;
-    line<5;
-    line++
-  ){
-
-    const y =
-      staffTop+
-      line*
-      staffSpacing;
-
-    context.beginPath();
-
-    context.moveTo(
-      margin,
-      y
-    );
-
-    context.lineTo(
-      canvas.width-30,
-      y
-    );
-
-    context.stroke();
-
-  }
-
-  /*
-    Treble clef.
-  */
-
-  context.fillStyle =
-    "#111";
-
-  context.font =
-    "58px serif";
-
-  context.fillText(
-    "𝄞",
-    18,
-    staffTop+42
-  );
-
-  /*
-    Positionnement des notes.
-
-    C4 = ligne/position centrale approximative.
-  */
-
-  const pixelsPerSecond =
-    95;
-
-  const systemWidth =
-    canvas.width-
-    margin-
-    35;
-
-  const durationPerSystem =
-    systemWidth/
-    pixelsPerSecond;
-
-  for(
-    const note of notes
-  ){
-
-    const system =
-      Math.floor(
-        note.start/
-        durationPerSystem
+        i + 1,
+        radius
       );
-
-    const localTime =
-      note.start-
-      system*
-      durationPerSystem;
-
-    const x =
-      margin+
-      localTime*
-      pixelsPerSecond;
-
-    /*
-      Hauteur graphique.
-    */
-
-    const semitones =
-      note.pitch-60;
-
-    const rawY =
-      staffTop+
-      4*
-      staffSpacing-
-      semitones*
-      3.0;
-
-    /*
-      Chaque système est ramené sur une portée.
-    */
-
-    const y =
-      (
-        (
-          rawY-
-          staffTop
-        )%140+
-        140
-      )%140+
-      staffTop;
-
-    /*
-      Note head.
-    */
-
-    context.beginPath();
-
-    context.ellipse(
-      x,
-      y,
-      8,
-      5.5,
-      -0.25,
-      0,
-      Math.PI*2
-    );
-
-    context.fillStyle =
-      "#111";
-
-    context.fill();
-
-    /*
-      Stem.
-    */
-
-    context.strokeStyle =
-      "#111";
-
-    context.lineWidth =
-      1.5;
-
-    context.beginPath();
-
-    context.moveTo(
-      x+7,
-      y
-    );
-
-    context.lineTo(
-      x+7,
-      y-34
-    );
-
-    context.stroke();
-
-    /*
-      Nom de note si peu de notes.
-    */
-
-    if(
-      notes.length<=45
-    ){
-
-      context.font =
-        "9px JetBrains Mono";
-
-      context.fillStyle =
-        "#666";
-
-      context.fillText(
-        midiName(
-          note.pitch
-        ),
-        x-10,
-        Math.min(
-          canvas.height-15,
-          y+38
-        )
-      );
-
-    }
-
-  }
-
-}
-
-
-/* =========================================================
-   MIDI EXPORT
-   ========================================================= */
-
-$("midiBtn").onclick =
-  exportMIDI;
-
-
-function exportMIDI(){
-
-  if(
-    !state.notes.length
-  ){
-
-    toast(
-      "Aucune note à exporter."
-    );
-
-    return;
-
-  }
-
-  const bpm =
-    state.analysis?.bpm ||
-    120;
-
-  const bytes =
-    createMIDI(
-      state.notes,
-      bpm
-    );
-
-  downloadBytes(
-    bytes,
-    "orchestrai-transcription.mid",
-    "audio/midi"
-  );
-
-  toast(
-    "MIDI exporté."
-  );
-
-}
-
-
-/* =========================================================
-   MIDI GENERATOR
-   ========================================================= */
-
-function createMIDI(
-  notes,
-  bpm
-){
-
-  const PPQ =
-    480;
-
-  const beatSeconds =
-    60/bpm;
-
-  const events=[];
-
-  for(
-    const note of notes
-  ){
-
-    const pitch =
-      Math.max(
-        0,
-        Math.min(
-          127,
-          Math.round(
-            note.pitch
-          )
-        )
-      );
-
-    const start =
-      Math.max(
-        0,
-        Math.round(
-          note.start/
-          beatSeconds*
-          PPQ
-        )
-      );
-
-    const end =
-      Math.max(
-        start+1,
-        Math.round(
-          (
-            note.start+
-            note.dur
-          )/
-          beatSeconds*
-          PPQ
-        )
-      );
-
-    const velocity =
-      Math.max(
-        1,
-        Math.min(
-          127,
-          Math.round(
-            note.velocity||
-            90
-          )
-        )
-      );
-
-    events.push({
-
-      tick:
-        start,
-
-      type:
-        "on",
-
-      pitch,
-
-      velocity
-
-    });
-
-    events.push({
-
-      tick:
-        end,
-
-      type:
-        "off",
-
-      pitch,
-
-      velocity:0
-
-    });
-
-  }
-
-  events.sort(
-    (a,b)=>
-      a.tick-b.tick ||
-      (
-        a.type==="off"
-        ? -1
-        : 1
-      )
-  );
-
-  const track=[];
-
-  /*
-    Tempo event.
-  */
-
-  const microseconds =
-    Math.round(
-      60000000/bpm
-    );
-
-  track.push(
-    0x00,
-    0xff,
-    0x51,
-    0x03,
-    ...int24(
-      microseconds
-    )
-  );
-
-  let previous=0;
-
-  for(
-    const event of events
-  ){
-
-    const delta =
-      event.tick-
-      previous;
-
-    track.push(
-      ...vlq(delta)
-    );
-
-    track.push(
-      0x90,
-      event.pitch,
-      event.type==="on"
-        ? event.velocity
-        : 0
-    );
-
-    previous =
-      event.tick;
-
-  }
-
-  /*
-    End of track.
-  */
-
-  track.push(
-    0x00,
-    0xff,
-    0x2f,
-    0x00
-  );
-
-  /*
-    MIDI header.
-  */
-
-  const header=[
-
-    0x4d,
-    0x54,
-    0x68,
-    0x64,
-
-    0x00,
-    0x00,
-    0x00,
-    0x06,
-
-    0x00,
-    0x00,
-
-    0x00,
-    0x01,
-
-    (PPQ>>8)&255,
-    PPQ&255
-
-  ];
-
-  const trackHeader=[
-
-    0x4d,
-    0x54,
-    0x72,
-    0x6b,
-
-    ...uint32(
-      track.length
-    )
-
-  ];
-
-  return new Uint8Array([
-
-    ...header,
-
-    ...trackHeader,
-
-    ...track
-
-  ]);
-
-}
-
-
-/* =========================================================
-   MIDI HELPERS
-   ========================================================= */
-
-function vlq(value){
-
-  let buffer =
-    value&0x7f;
-
-  const result=[];
-
-  while(
-    (value>>=7)
-  ){
-
-    buffer<<=8;
-
-    buffer |=
-      (
-        value&
-        0x7f
-      )|
-      0x80;
-
-  }
-
-  while(true){
-
-    result.push(
-      buffer&0xff
-    );
-
-    if(
-      buffer&0x80
-    ){
-
-      buffer>>=8;
-
-    }else{
-
-      break;
-
-    }
 
   }
 
@@ -4433,1047 +3055,1436 @@ function vlq(value){
 }
 
 
-function uint32(value){
+/* ============================================================
+   KEY ESTIMATION
+   ============================================================ */
 
-  return [
+function estimateKey(buffer) {
 
-    (value>>>24)&255,
-    (value>>>16)&255,
-    (value>>>8)&255,
-    value&255
+  const data =
+    buffer.getChannelData(0);
 
-  ];
+  const sampleRate =
+    buffer.sampleRate;
 
-}
+  const chroma =
+    new Float64Array(12);
 
+  /*
+   * Sample spectral peaks and accumulate pitch classes.
+   */
 
-function int24(value){
+  const windowSize =
+    4096;
 
-  return [
+  const hop =
+    2048;
 
-    (value>>>16)&255,
-    (value>>>8)&255,
-    value&255
+  for (
+    let start = 0;
+    start + windowSize < data.length;
+    start += hop
+  ) {
 
-  ];
+    const frame =
+      data.subarray(
+        start,
+        start + windowSize
+      );
 
-}
+    const frequency =
+      detectDominantFrequency(
+        frame,
+        sampleRate
+      );
 
+    if (
+      frequency >= 50 &&
+      frequency <= 5000
+    ) {
 
-/* =========================================================
-   MUSICXML
-   ========================================================= */
+      const midi =
+        frequencyToMidi(
+          frequency
+        );
 
-$("xmlBtn").onclick =
-  exportMusicXML;
+      const pitchClass =
+        ((Math.round(midi) % 12) + 12) % 12;
 
+      chroma[pitchClass] += 1;
 
-function exportMusicXML(){
-
-  if(
-    !state.notes.length
-  ){
-
-    toast(
-      "Aucune note à exporter."
-    );
-
-    return;
+    }
 
   }
 
-  const xml =
-    createMusicXML(
-      state.notes,
-      state.analysis
-    );
 
-  download(
-    xml,
-    "orchestrai-transcription.musicxml",
-    "application/vnd.recordare.musicxml+xml"
-  );
+  const names = [
+    "Do",
+    "Do♯",
+    "Ré",
+    "Mi♭",
+    "Mi",
+    "Fa",
+    "Fa♯",
+    "Sol",
+    "Sol♯",
+    "La",
+    "Si♭",
+    "Si"
+  ];
 
-  toast(
-    "MusicXML exporté."
+
+  let best =
+    0;
+
+  for (
+    let i = 1;
+    i < 12;
+    i++
+  ) {
+
+    if (
+      chroma[i] >
+      chroma[best]
+    ) {
+
+      best = i;
+
+    }
+
+  }
+
+
+  if (
+    chroma[best] === 0
+  ) {
+
+    return "—";
+
+  }
+
+
+  return (
+    names[best] +
+    " majeur"
   );
 
 }
 
 
-/* =========================================================
-   MUSICXML GENERATOR
-   ========================================================= */
+/* ============================================================
+   DOMINANT FREQUENCY
+   ============================================================ */
 
-function createMusicXML(
-  notes,
-  analysis
-){
+function detectDominantFrequency(
+  frame,
+  sampleRate
+) {
 
-  const bpm =
-    analysis?.bpm ||
-    120;
+  let crossings = 0;
 
-  const divisions =
-    4;
+  let previous =
+    frame[0] || 0;
 
-  const beatSeconds =
-    60/bpm;
+  for (
+    let i = 1;
+    i < frame.length;
+    i++
+  ) {
 
-  const measureSeconds =
-    beatSeconds*4;
+    const current =
+      frame[i];
 
-  const maximumTime =
-    notes.reduce(
-      (
-        max,
-        note
-      )=>
-        Math.max(
-          max,
-          note.start+
-          note.dur
-        ),
-      0
+    if (
+      previous <= 0 &&
+      current > 0
+    ) {
+
+      crossings++;
+
+    }
+
+    previous =
+      current;
+
+  }
+
+  const duration =
+    frame.length /
+    sampleRate;
+
+  if (
+    duration <= 0
+  ) {
+
+    return 0;
+
+  }
+
+  return crossings /
+    duration;
+
+}
+
+
+/* ============================================================
+   MELODY TRANSCRIPTION
+   ============================================================ */
+
+async function transcribeMelody(
+  buffer
+) {
+
+  setStatus(
+    "Extraction de la ligne mélodique…"
+  );
+
+  /*
+   * Browser-side monophonic F0 extraction.
+   *
+   * For polyphonic orchestral audio this is deliberately
+   * treated as a first-pass melody extractor.
+   *
+   * A production backend can replace this stage with
+   * MT3 / Basic Pitch / another polyphonic model.
+   */
+
+  const notes =
+    extractMelodyNotes(
+      buffer
     );
 
-  const measureCount =
+  state.notes =
+    notes;
+
+  state.originalNotes =
+    notes.map(
+      note => ({
+        ...note
+      })
+    );
+
+  renderDetectedNotes(
+    notes
+  );
+
+  buildMusicXML(
+    notes
+  );
+
+  renderScore(
+    state.musicXML
+  );
+
+  scoreStatus.textContent =
+    "PRÊTE";
+
+  scoreInfo.textContent =
+    `${notes.length} notes détectées`;
+
+}
+
+
+/* ============================================================
+   MONOPHONIC NOTE EXTRACTION
+   ============================================================ */
+
+function extractMelodyNotes(
+  buffer
+) {
+
+  const data =
+    buffer.getChannelData(0);
+
+  const sampleRate =
+    buffer.sampleRate;
+
+
+  /*
+   * Limit analysis to reasonable amount of audio
+   * for a responsive browser experience.
+   */
+
+  const maxDuration =
+    Math.min(
+      buffer.duration,
+      120
+    );
+
+  const frameSize =
+    2048;
+
+  const hop =
+    1024;
+
+  const notes = [];
+
+  let activeNote = null;
+
+
+  for (
+    let start = 0;
+    start <
+    maxDuration * sampleRate - frameSize;
+    start += hop
+  ) {
+
+    const frame =
+      data.subarray(
+        start,
+        start + frameSize
+      );
+
+    const rms =
+      calculateRMS(frame);
+
+    const time =
+      start /
+      sampleRate;
+
+
+    /*
+     * Ignore silence / extremely quiet regions.
+     */
+
+    if (
+      rms < 0.012
+    ) {
+
+      if (activeNote) {
+
+        activeNote.end =
+          time;
+
+        activeNote.duration =
+          Math.max(
+            .08,
+            activeNote.end -
+            activeNote.start
+          );
+
+        notes.push(
+          activeNote
+        );
+
+        activeNote =
+          null;
+
+      }
+
+      continue;
+
+    }
+
+
+    const frequency =
+      detectPitchYIN(
+        frame,
+        sampleRate
+      );
+
+
+    if (
+      !frequency ||
+      frequency < 70 ||
+      frequency > 1200
+    ) {
+
+      continue;
+
+    }
+
+
+    const midiFloat =
+      frequencyToMidi(
+        frequency
+      );
+
+    const midi =
+      Math.round(
+        midiFloat
+      );
+
+    const cents =
+      (
+        midiFloat -
+        midi
+      ) *
+      100;
+
+
+    if (
+      !activeNote
+    ) {
+
+      activeNote = {
+
+        pitch: midi,
+
+        start: time,
+
+        end: time,
+
+        duration: 0,
+
+        cents,
+
+        velocity:
+          clamp(
+            Math.round(
+              rms * 700
+            ),
+            30,
+            110
+          )
+
+      };
+
+    } else {
+
+      /*
+       * Keep the same note if pitch remains close.
+       */
+
+      if (
+        Math.abs(
+          midi -
+          activeNote.pitch
+        ) <= 1
+      ) {
+
+        activeNote.end =
+          time;
+
+        activeNote.duration =
+          activeNote.end -
+          activeNote.start;
+
+      } else {
+
+        /*
+         * Avoid microscopic notes.
+         */
+
+        if (
+          activeNote.duration >=
+          0.08
+        ) {
+
+          notes.push(
+            activeNote
+          );
+
+        }
+
+        activeNote = {
+
+          pitch: midi,
+
+          start: time,
+
+          end: time,
+
+          duration: 0,
+
+          cents,
+
+          velocity:
+            clamp(
+              Math.round(
+                rms * 700
+              ),
+              30,
+              110
+            )
+
+        };
+
+      }
+
+    }
+
+  }
+
+
+  if (
+    activeNote &&
+    activeNote.duration >= .08
+  ) {
+
+    notes.push(
+      activeNote
+    );
+
+  }
+
+
+  /*
+   * Merge repeated adjacent notes.
+   */
+
+  return mergeAdjacentNotes(
+    notes
+  );
+
+}
+
+
+/* ============================================================
+   RMS
+   ============================================================ */
+
+function calculateRMS(
+  frame
+) {
+
+  let sum = 0;
+
+  for (
+    let i = 0;
+    i < frame.length;
+    i++
+  ) {
+
+    sum +=
+      frame[i] *
+      frame[i];
+
+  }
+
+  return Math.sqrt(
+    sum /
+    frame.length
+  );
+
+}
+
+
+/* ============================================================
+   YIN-LIKE AUTOCORRELATION PITCH DETECTOR
+   ============================================================ */
+
+function detectPitchYIN(
+  frame,
+  sampleRate
+) {
+
+  const minFrequency = 70;
+  const maxFrequency = 1200;
+
+  const minLag =
+    Math.floor(
+      sampleRate /
+      maxFrequency
+    );
+
+  const maxLag =
+    Math.floor(
+      sampleRate /
+      minFrequency
+    );
+
+
+  let bestLag =
+    -1;
+
+  let bestScore =
+    Infinity;
+
+
+  /*
+   * Difference function.
+   */
+
+  for (
+    let lag = minLag;
+    lag <= maxLag &&
+    lag < frame.length / 2;
+    lag++
+  ) {
+
+    let difference = 0;
+
+    const length =
+      frame.length -
+      lag;
+
+    for (
+      let i = 0;
+      i < length;
+      i++
+    ) {
+
+      const delta =
+        frame[i] -
+        frame[i + lag];
+
+      difference +=
+        delta * delta;
+
+    }
+
+    difference /=
+      length;
+
+
+    if (
+      difference <
+      bestScore
+    ) {
+
+      bestScore =
+        difference;
+
+      bestLag =
+        lag;
+
+    }
+
+  }
+
+
+  if (
+    bestLag <= 0
+  ) {
+
+    return 0;
+
+  }
+
+
+  return (
+    sampleRate /
+    bestLag
+  );
+
+}
+
+
+/* ============================================================
+   FREQUENCY / MIDI
+   ============================================================ */
+
+function frequencyToMidi(
+  frequency
+) {
+
+  return (
+    69 +
+    12 *
+    Math.log2(
+      frequency /
+      440
+    )
+  );
+
+}
+
+
+function midiToFrequency(
+  midi
+) {
+
+  return (
+    440 *
+    Math.pow(
+      2,
+      (midi - 69) / 12
+    )
+  );
+
+}
+
+
+/* ============================================================
+   NOTE NAMES
+   ============================================================ */
+
+const NOTE_NAMES = [
+  "Do",
+  "Do♯",
+  "Ré",
+  "Ré♯",
+  "Mi",
+  "Fa",
+  "Fa♯",
+  "Sol",
+  "Sol♯",
+  "La",
+  "La♯",
+  "Si"
+];
+
+
+function midiToNoteName(
+  midi
+) {
+
+  const pc =
+    (
+      midi % 12 +
+      12
+    ) % 12;
+
+  const octave =
+    Math.floor(
+      midi / 12
+    ) - 1;
+
+  return `${NOTE_NAMES[pc]}${octave}`;
+
+}
+
+
+/* ============================================================
+   MERGE ADJACENT NOTES
+   ============================================================ */
+
+function mergeAdjacentNotes(
+  notes
+) {
+
+  if (
+    notes.length === 0
+  ) {
+
+    return [];
+
+  }
+
+  const result = [
+    {
+      ...notes[0]
+    }
+  ];
+
+
+  for (
+    let i = 1;
+    i < notes.length;
+    i++
+  ) {
+
+    const previous =
+      result[
+        result.length - 1
+      ];
+
+    const current =
+      notes[i];
+
+
+    if (
+      previous.pitch ===
+        current.pitch &&
+
+      current.start -
+      previous.end < .12
+    ) {
+
+      previous.end =
+        current.end;
+
+      previous.duration =
+        previous.end -
+        previous.start;
+
+    } else {
+
+      result.push({
+        ...current
+      });
+
+    }
+
+  }
+
+
+  return result.filter(
+    note =>
+      note.duration >= .08
+  );
+
+}
+
+
+/* ============================================================
+   RENDER DETECTED NOTES
+   ============================================================ */
+
+function renderDetectedNotes(
+  notes
+) {
+
+  detectedNotes.innerHTML = "";
+
+  const preview =
+    notes.slice(
+      0,
+      80
+    );
+
+  preview.forEach(
+    note => {
+
+      const chip =
+        document.createElement(
+          "div"
+        );
+
+      chip.className =
+        "note-chip";
+
+      chip.textContent =
+        midiToNoteName(
+          note.pitch
+        );
+
+      detectedNotes.appendChild(
+        chip
+      );
+
+    }
+  );
+
+
+  if (
+    notes.length === 0
+  ) {
+
+    hummingResult.textContent =
+      "Aucune hauteur suffisamment stable n'a été détectée.";
+
+  } else {
+
+    hummingResult.textContent =
+      `${notes.length} notes mélodiques détectées.`;
+
+  }
+
+}
+
+
+/* ============================================================
+   MUSICXML
+   ============================================================ */
+
+function buildMusicXML(
+  notes
+) {
+
+  const divisions = 480;
+
+  const tempo =
     Math.max(
-      1,
-      Math.ceil(
-        maximumTime/
-        measureSeconds
+      40,
+      Math.min(
+        220,
+        Math.round(
+          state.tempo ||
+          100
+        )
       )
     );
 
-  let measures="";
 
-  for(
-    let measureIndex=0;
-    measureIndex<measureCount;
-    measureIndex++
-  ){
+  /*
+   * Quantisation:
+   *
+   * Quarter note = 1 beat.
+   *
+   * We quantize starts/durations to 1/16 notes.
+   */
 
-    const start =
-      measureIndex*
-      measureSeconds;
+  const quarterSeconds =
+    60 /
+    tempo;
 
-    const end =
-      start+
-      measureSeconds;
+  const quantized =
+    notes.map(
+      note => {
 
-    const measureNotes =
-      notes.filter(
-        note=>
-          note.start>=start &&
-          note.start<end
+        const startBeat =
+          Math.round(
+            note.start /
+            quarterSeconds *
+            4
+          ) / 4;
+
+        const durationBeat =
+          Math.max(
+            .25,
+            Math.round(
+              note.duration /
+              quarterSeconds *
+              4
+            ) / 4
+          );
+
+        return {
+
+          ...note,
+
+          startBeat,
+
+          durationBeat
+
+        };
+
+      }
+    );
+
+
+  /*
+   * Build measures.
+   *
+   * 4/4 = 4 beats.
+   */
+
+  const measures =
+    [];
+
+  let currentMeasure = {
+    number: 1,
+    notes: []
+  };
+
+  for (
+    const note of quantized
+  ) {
+
+    const measureIndex =
+      Math.floor(
+        note.startBeat / 4
       );
 
-    measures += `
+    while (
+      measures.length <=
+      measureIndex
+    ) {
 
-      <measure number="${measureIndex+1}">
+      measures.push({
+        number:
+          measures.length + 1,
+        notes: []
+      });
 
-        ${
-          measureIndex===0
-          ? `
-          <attributes>
+    }
 
-            <divisions>
-              ${divisions}
-            </divisions>
-
-            <key>
-
-              <fifths>
-                ${keyToFifths(
-                  analysis?.key
-                )}
-              </fifths>
-
-              <mode>
-                ${
-                  analysis?.key?.includes(
-                    "mineur"
-                  )
-                  ? "minor"
-                  : "major"
-                }
-              </mode>
-
-            </key>
-
-            <time>
-
-              <beats>4</beats>
-
-              <beat-type>
-                4
-              </beat-type>
-
-            </time>
-
-            <clef>
-
-              <sign>G</sign>
-
-              <line>2</line>
-
-            </clef>
-
-          </attributes>
-          `
-          : ""
-        }
-
-        ${
-          measureNotes
-            .map(
-              note=>
-                musicXMLNote(
-                  note,
-                  start,
-                  beatSeconds,
-                  divisions
-                )
-            )
-            .join("")
-        }
-
-      </measure>
-
-    `;
+    measures[
+      measureIndex
+    ].notes.push(
+      note
+    );
 
   }
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
 
+  const xmlNotes =
+    measures
+      .map(
+        measure =>
+          buildMeasureXML(
+            measure,
+            divisions
+          )
+      )
+      .join("");
+
+
+  const title =
+    "OrchestrAI — Transcription";
+
+
+  const xml =
+`<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE score-partwise PUBLIC
   "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
-  "https://www.musicxml.com/dtds/partwise.dtd"
->
+  "http://www.musicxml.org/dtds/partwise.dtd">
 
 <score-partwise version="4.0">
 
   <work>
-
-    <work-title>
-      ORCHESTRAi Transcription
-    </work-title>
-
+    <work-title>${escapeXML(title)}</work-title>
   </work>
 
   <identification>
-
-    <creator type="software">
-      ORCHESTRAi
-    </creator>
-
+    <creator type="software">OrchestrAI V4</creator>
   </identification>
 
   <part-list>
 
     <score-part id="P1">
-
-      <part-name>
-        Melody
-      </part-name>
-
+      <part-name>Mélodie détectée</part-name>
+      <part-abbreviation>Mel.</part-abbreviation>
     </score-part>
 
   </part-list>
 
   <part id="P1">
 
-    ${measures}
+    ${measures.length
+      ? xmlNotes
+      : `
+      <measure number="1">
+        <attributes>
+          <divisions>${divisions}</divisions>
+
+          <key>
+            <fifths>0</fifths>
+            <mode>major</mode>
+          </key>
+
+          <time>
+            <beats>4</beats>
+            <beat-type>4</beat-type>
+          </time>
+
+          <clef>
+            <sign>G</sign>
+            <line>2</line>
+          </clef>
+
+        </attributes>
+
+        <direction placement="above">
+          <direction-type>
+            <words>
+              OrchestrAI — aucune note détectée
+            </words>
+          </direction-type>
+        </direction>
+
+      </measure>
+      `
+    }
 
   </part>
 
 </score-partwise>`;
 
+
+  state.musicXML =
+    xml;
+
 }
 
 
-/* =========================================================
-   MUSICXML NOTE
-   ========================================================= */
+/* ============================================================
+   MUSICXML MEASURE
+   ============================================================ */
 
-function musicXMLNote(
-  note,
-  measureStart,
-  beatSeconds,
+function buildMeasureXML(
+  measure,
   divisions
-){
+) {
+
+  let xml = `
+    <measure number="${measure.number}">
+  `;
+
+
+  if (
+    measure.number === 1
+  ) {
+
+    xml += `
+      <attributes>
+
+        <divisions>${divisions}</divisions>
+
+        <key>
+          <fifths>0</fifths>
+          <mode>major</mode>
+        </key>
+
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
+
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+
+      </attributes>
+
+      <direction placement="above">
+
+        <direction-type>
+
+          <metronome>
+
+            <beat-unit>quarter</beat-unit>
+
+            <per-minute>
+              ${Math.round(
+                state.tempo ||
+                100
+              )}
+            </per-minute>
+
+          </metronome>
+
+        </direction-type>
+
+        <sound tempo="${Math.round(
+          state.tempo ||
+          100
+        )}"/>
+
+      </direction>
+    `;
+
+  }
+
+
+  /*
+   * Group notes by rough start position.
+   */
+
+  const groups =
+    {};
+
+  measure.notes.forEach(
+    note => {
+
+      const localStart =
+        note.startBeat -
+        (measure.number - 1) * 4;
+
+      const key =
+        Math.round(
+          localStart * 100
+        ) / 100;
+
+      if (
+        !groups[key]
+      ) {
+
+        groups[key] = [];
+
+      }
+
+      groups[key].push(
+        note
+      );
+
+    }
+  );
+
+
+  let cursor =
+    0;
+
+
+  const sortedKeys =
+    Object.keys(groups)
+      .map(Number)
+      .sort(
+        (a, b) =>
+          a - b
+      );
+
+
+  for (
+    const start of sortedKeys
+  ) {
+
+    const group =
+      groups[start];
+
+    const gap =
+      start -
+      cursor;
+
+
+    if (
+      gap > .001
+    ) {
+
+      xml +=
+        buildRestXML(
+          gap,
+          divisions
+        );
+
+    }
+
+
+    /*
+     * Chord support:
+     * if several notes start together,
+     * all except the first receive <chord/>.
+     */
+
+    group.forEach(
+      (note, index) => {
+
+        xml +=
+          buildNoteXML(
+            note,
+            divisions,
+            index > 0
+          );
+
+      }
+    );
+
+
+    const duration =
+      Math.max(
+        ...group.map(
+          n =>
+            n.durationBeat
+        )
+      );
+
+    cursor =
+      start +
+      duration;
+
+  }
+
+
+  /*
+   * Fill remaining measure.
+   */
+
+  if (
+    cursor < 4
+  ) {
+
+    xml +=
+      buildRestXML(
+        4 - cursor,
+        divisions
+      );
+
+  }
+
+
+  xml += `
+    </measure>
+  `;
+
+  return xml;
+
+}
+
+
+/* ============================================================
+   MUSICXML NOTE
+   ============================================================ */
+
+function buildNoteXML(
+  note,
+  divisions,
+  isChord
+) {
+
+  const pitch =
+    note.pitch;
+
+  const pitchClass =
+    (
+      pitch % 12 +
+      12
+    ) % 12;
+
+  const octave =
+    Math.floor(
+      pitch / 12
+    ) - 1;
+
+
+  const stepMap = [
+    ["C", null],
+    ["C", 1],
+    ["D", null],
+    ["D", 1],
+    ["E", null],
+    ["F", null],
+    ["F", 1],
+    ["G", null],
+    ["G", 1],
+    ["A", null],
+    ["A", 1],
+    ["B", null]
+  ];
+
+
+  const [
+    step,
+    alter
+  ] =
+    stepMap[
+      pitchClass
+    ];
+
 
   const duration =
     Math.max(
       1,
       Math.round(
-        note.dur/
-        beatSeconds*
+        note.durationBeat *
         divisions
       )
     );
 
-  const pitch =
-    Math.round(
-      note.pitch
-    );
 
-  const pitchData =
-    midiToMusicXMLPitch(
-      pitch%12
-    );
+  const type =
+    duration >= divisions * 4
+      ? "whole"
+      : duration >= divisions * 2
+        ? "half"
+        : duration >= divisions
+          ? "quarter"
+          : duration >= divisions / 2
+            ? "eighth"
+            : "16th";
 
-  const octave =
-    Math.floor(
-      pitch/12
-    )-1;
 
   return `
-
     <note>
+
+      ${isChord
+        ? "<chord/>"
+        : ""
+      }
 
       <pitch>
 
-        <step>
-          ${pitchData.step}
-        </step>
+        <step>${step}</step>
 
         ${
-          pitchData.alter!==0
-          ? `
-            <alter>
-              ${pitchData.alter}
-            </alter>
-          `
-          : ""
+          alter !== null
+            ? `<alter>${alter}</alter>`
+            : ""
         }
 
-        <octave>
-          ${octave}
-        </octave>
+        <octave>${octave}</octave>
 
       </pitch>
 
-      <duration>
-        ${duration}
-      </duration>
+      <duration>${duration}</duration>
 
-      <voice>
-        1
-      </voice>
+      <voice>1</voice>
 
-      <type>
-        ${durationToType(
-          duration
-        )}
-      </type>
+      <type>${type}</type>
+
+      <stem>
+        ${pitch >= 60 ? "up" : "down"}
+      </stem>
 
     </note>
-
   `;
 
 }
 
 
-/* =========================================================
-   MUSICXML DURATION
-   ========================================================= */
+/* ============================================================
+   MUSICXML REST
+   ============================================================ */
 
-function durationToType(
-  duration
-){
+function buildRestXML(
+  beats,
+  divisions
+) {
 
-  if(duration>=16)
-    return "whole";
+  let remaining =
+    beats;
 
-  if(duration>=8)
-    return "half";
-
-  if(duration>=4)
-    return "quarter";
-
-  if(duration>=2)
-    return "eighth";
-
-  return "16th";
-
-}
+  let xml = "";
 
 
-/* =========================================================
-   MIDI → MUSICXML
-   ========================================================= */
-
-function midiToMusicXMLPitch(
-  pitchClass
-){
-
-  const table=[
-
-    ["C",0],
-    ["C",1],
-    ["D",0],
-    ["E",-1],
-    ["E",0],
-    ["F",0],
-    ["F",1],
-    ["G",0],
-    ["A",-1],
-    ["A",0],
-    ["B",-1],
-    ["B",0]
-
+  const values = [
+    {
+      beats: 4,
+      type: "whole"
+    },
+    {
+      beats: 2,
+      type: "half"
+    },
+    {
+      beats: 1,
+      type: "quarter"
+    },
+    {
+      beats: .5,
+      type: "eighth"
+    },
+    {
+      beats: .25,
+      type: "16th"
+    }
   ];
 
-  return {
 
-    step:
-      table[pitchClass][0],
-
-    alter:
-      table[pitchClass][1]
-
-  };
-
-}
-
-
-/* =========================================================
-   KEY → FIFTHS
-   ========================================================= */
-
-function keyToFifths(
-  key
-){
-
-  const map={
-
-    "C Majeur":0,
-    "G Majeur":1,
-    "D Majeur":2,
-    "A Majeur":3,
-    "E Majeur":4,
-    "B Majeur":5,
-    "F♯ Majeur":6,
-    "C♯ Majeur":7,
-
-    "F Majeur":-1,
-    "B♭ Majeur":-2,
-    "E♭ Majeur":-3,
-    "A♭ Majeur":-4,
-    "D♭ Majeur":-5,
-    "G♭ Majeur":-6,
-    "C♭ Majeur":-7,
-
-    "A mineur":0,
-    "E mineur":1,
-    "B mineur":2,
-    "F♯ mineur":3,
-    "C♯ mineur":4,
-    "G♯ mineur":5,
-    "D♯ mineur":6,
-    "A♯ mineur":7,
-
-    "D mineur":-1,
-    "G mineur":-2,
-    "C mineur":-3,
-    "F mineur":-4,
-    "B♭ mineur":-5,
-    "E♭ mineur":-6,
-    "A♭ mineur":-7
-
-  };
-
-  return (
-    map[key] ??
-    0
-  );
-
-}
-
-
-/* =========================================================
-   HUMMING
-   ========================================================= */
-
-$("humBtn").onclick =
-  recordHumming;
-
-$("recordBtn").onclick =
-  recordHumming;
-
-
-async function recordHumming(){
-
-  if(
-    state.recording
-  ){
-
-    return;
-
-  }
-
-  if(
-    !navigator.mediaDevices ||
-    !navigator.mediaDevices.getUserMedia
-  ){
-
-    toast(
-      "Le microphone n'est pas disponible."
-    );
-
-    return;
-
-  }
-
-  try{
-
-    const stream =
-      await navigator
-        .mediaDevices
-        .getUserMedia({
-
-          audio:{
-
-            channelCount:1,
-
-            echoCancellation:true,
-
-            noiseSuppression:true,
-
-            autoGainControl:true
-
-          }
-
-        });
-
-    const mimeType =
-      MediaRecorder.isTypeSupported(
-        "audio/webm;codecs=opus"
-      )
-      ? "audio/webm;codecs=opus"
-      : "";
-
-    const recorder =
-      mimeType
-      ? new MediaRecorder(
-          stream,
-          {
-            mimeType
-          }
-        )
-      : new MediaRecorder(
-          stream
-        );
-
-    state.recorder =
-      recorder;
-
-    state.recordingChunks =
-      [];
-
-    state.recording =
-      true;
-
-    $("recordBtn").textContent =
-      "● ENREGISTREMENT…";
-
-    $("humBtn").textContent =
-      "● ÉCOUTE…";
-
-    recorder.ondataavailable =
-      event=>{
-
-        if(
-          event.data.size
-        ){
-
-          state.recordingChunks.push(
-            event.data
-          );
-
-        }
-
-      };
-
-    recorder.onstop =
-      async()=>{
-
-        stream
-          .getTracks()
-          .forEach(
-            track=>
-              track.stop()
-          );
-
-        state.recording =
-          false;
-
-        $("recordBtn").textContent =
-          "● ENREGISTRER 8 S";
-
-        $("humBtn").textContent =
-          "🎙 FREDONNER";
-
-        try{
-
-          const blob =
-            new Blob(
-              state.recordingChunks,
-              {
-                type:
-                  recorder.mimeType ||
-                  "audio/webm"
-              }
-            );
-
-          const arrayBuffer =
-            await blob.arrayBuffer();
-
-          const context =
-            await getAudioContext();
-
-          const buffer =
-            await context
-              .decodeAudioData(
-                arrayBuffer
-              );
-
-          toast(
-            "Analyse du fredonnement…"
-          );
-
-          const result =
-            await analyzeHumming(
-              buffer
-            );
-
-          state.humming =
-            result;
-
-          $("hummingResult")
-            .textContent =
-              [
-
-                `Notes détectées : ${result.notes.length}`,
-
-                `Contour : ${result.contour || "—"}`,
-
-                `Ambitus : ${result.range || "—"}`,
-
-                `Centre mélodique : ${result.center || "—"}`,
-
-                "",
-
-                "Le contour est indépendant de la tonalité :",
-
-                "la même mélodie peut donc être fredonnée",
-
-                "plus haut ou plus bas."
-
-              ].join("\n");
-
-          if(
-            result.notes.length
-          ){
-
-            state.notes =
-              result.notes;
-
-            renderScore(
-              state.notes
-            );
-
-            toast(
-              "Mélodie extraite."
-            );
-
-          }else{
-
-            toast(
-              "Aucune mélodie suffisamment claire."
-            );
-
-          }
-
-        }catch(error){
-
-          console.error(
-            error
-          );
-
-          toast(
-            "Impossible d'analyser le fredonnement."
-          );
-
-        }
-
-      };
-
-    recorder.start();
-
-    toast(
-      "Fredonne naturellement pendant 8 secondes."
-    );
-
-    setTimeout(
-      ()=>{
-
-        if(
-          recorder.state===
-          "recording"
-        ){
-
-          recorder.stop();
-
-        }
-
-      },
-      8000
-    );
-
-  }catch(error){
-
-    console.error(
-      error
-    );
-
-    toast(
-      "Autorisation microphone refusée."
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   HUMMING ANALYSIS
-   ========================================================= */
-
-async function analyzeHumming(
-  buffer
-){
-
-  const data =
-    getMono(buffer);
-
-  const sampleRate =
-    buffer.sampleRate;
-
-  const frame =
-    Math.floor(
-      sampleRate*.09
-    );
-
-  const hop =
-    Math.floor(
-      sampleRate*.045
-    );
-
-  const raw=[];
-
-  for(
-    let start=0;
-    start+frame<data.length;
-    start+=hop
-  ){
-
-    const pitch =
-      detectPitchYIN(
-        data,
-        start,
-        frame,
-        sampleRate
+  while (
+    remaining > .001
+  ) {
+
+    let value =
+      values.find(
+        item =>
+          item.beats <=
+          remaining + .001
       );
 
-    if(
-      pitch!==null
-    ){
 
-      raw.push({
-
-        time:
-          start/sampleRate,
-
-        midi:
-          pitch
-
-      });
-
+    if (!value) {
+      value =
+        values[
+          values.length - 1
+        ];
     }
 
-    if(
-      raw.length%15===0
-    ){
 
-      await nextFrame();
+    xml += `
+      <note>
 
-    }
+        <rest/>
 
-  }
+        <duration>
+          ${Math.round(
+            value.beats *
+            divisions
+          )}
+        </duration>
 
-  const notes =
-    quantizePitchContour(
-      raw,
-      100
-    );
+        <voice>1</voice>
 
-  let contour="";
+        <type>
+          ${value.type}
+        </type>
 
-  for(
-    let i=0;
-    i<notes.length;
-    i++
-  ){
+      </note>
+    `;
 
-    if(i===0){
 
-      contour+="S";
-
-      continue;
-
-    }
-
-    const difference =
-      notes[i].pitch-
-      notes[i-1].pitch;
-
-    if(
-      difference>=2
-    ){
-
-      contour+="U";
-
-    }else if(
-      difference<=-2
-    ){
-
-      contour+="D";
-
-    }else{
-
-      contour+="S";
-
-    }
+    remaining -=
+      value.beats;
 
   }
 
-  let range="—";
 
-  let center="—";
-
-  if(
-    notes.length
-  ){
-
-    const pitches =
-      notes.map(
-        note=>note.pitch
-      );
-
-    const minimum =
-      Math.min(
-        ...pitches
-      );
-
-    const maximum =
-      Math.max(
-        ...pitches
-      );
-
-    const average =
-      Math.round(
-        pitches.reduce(
-          (sum,value)=>
-            sum+value,
-          0
-        )/
-        pitches.length
-      );
-
-    range =
-      `${midiName(
-        minimum
-      )} → ${midiName(
-        maximum
-      )}`;
-
-    center =
-      midiName(
-        average
-      );
-
-  }
-
-  return {
-
-    notes,
-
-    contour,
-
-    range,
-
-    center
-
-  };
+  return xml;
 
 }
 
 
-/* =========================================================
-   MIDI NAME
-   ========================================================= */
+/* ============================================================
+   XML ESCAPE
+   ============================================================ */
 
-function midiName(
-  midi
-){
-
-  const octave =
-    Math.floor(
-      midi/12
-    )-1;
-
-  const note =
-    NOTE_NAMES[
-      (
-        midi%12+
-        12
-      )%12
-    ];
-
-  return (
-    note+
-    octave
-  );
-
-}
-
-
-/* =========================================================
-   UTILITIES
-   ========================================================= */
-
-function nextFrame(){
-
-  return new Promise(
-    resolve=>
-      requestAnimationFrame(
-        resolve
-      )
-  );
-
-}
-
-
-function download(
-  content,
-  filename,
-  type
-){
-
-  const blob =
-    new Blob(
-      [content],
-      {
-        type
-      }
-    );
-
-  const url =
-    URL.createObjectURL(
-      blob
-    );
-
-  const link =
-    document.createElement(
-      "a"
-    );
-
-  link.href =
-    url;
-
-  link.download =
-    filename;
-
-  document.body.appendChild(
-    link
-  );
-
-  link.click();
-
-  link.remove();
-
-  setTimeout(
-    ()=>{
-      URL.revokeObjectURL(
-        url
-      );
-    },
-    1000
-  );
-
-}
-
-
-function downloadBytes(
-  bytes,
-  filename,
-  type
-){
-
-  const blob =
-    new Blob(
-      [bytes],
-      {
-        type
-      }
-    );
-
-  const url =
-    URL.createObjectURL(
-      blob
-    );
-
-  const link =
-    document.createElement(
-      "a"
-    );
-
-  link.href =
-    url;
-
-  link.download =
-    filename;
-
-  document.body.appendChild(
-    link
-  );
-
-  link.click();
-
-  link.remove();
-
-  setTimeout(
-    ()=>{
-      URL.revokeObjectURL(
-        url
-      );
-    },
-    1000
-  );
-
-}
-
-
-function escapeHTML(
+function escapeXML(
   value
-){
+) {
 
-  return String(
-    value
-  )
+  return String(value)
     .replaceAll(
       "&",
       "&amp;"
@@ -5492,31 +4503,1629 @@ function escapeHTML(
     )
     .replaceAll(
       "'",
-      "&#039;"
+      "&apos;"
     );
 
 }
 
 
-/* =========================================================
-   RESIZE
-   ========================================================= */
+/* ============================================================
+   SCORE RENDERING
+   ============================================================ */
+
+async function renderScore(
+  xml
+) {
+
+  if (
+    !window.opensheetmusicdisplay
+  ) {
+
+    toast(
+      "Le moteur de partition n'est pas disponible."
+    );
+
+    return;
+
+  }
+
+
+  osmdContainer.innerHTML = "";
+
+
+  try {
+
+    state.osmd =
+      new opensheetmusicdisplay.OpenSheetMusicDisplay(
+        osmdContainer,
+        {
+
+          autoResize: true,
+
+          drawTitle: true,
+
+          drawSubtitle: true,
+
+          drawComposer: true,
+
+          drawCredits: true,
+
+          pageFormat: "A4",
+
+          pageBackgroundColor:
+            "#fffefa",
+
+          renderSingleHorizontalStaffline:
+            false
+
+        }
+      );
+
+
+    await state.osmd.load(
+      xml
+    );
+
+    state.osmd.render();
+
+  } catch (error) {
+
+    console.error(
+      "OSMD:",
+      error
+    );
+
+    osmdContainer.innerHTML = `
+
+      <div class="score-placeholder">
+
+        <strong>
+          MusicXML généré.
+        </strong>
+
+        <span>
+          Le moteur graphique n'a pas pu afficher
+          la partition dans ce navigateur.
+          Tu peux néanmoins exporter le fichier
+          MusicXML et l'ouvrir dans MuseScore.
+        </span>
+
+      </div>
+
+    `;
+
+  }
+
+}
+
+
+/* ============================================================
+   MUSICXML EXPORT
+   ============================================================ */
+
+$("exportXML").addEventListener(
+  "click",
+  () => {
+
+    if (
+      !state.musicXML
+    ) {
+
+      toast(
+        "Aucune partition à exporter."
+      );
+
+      return;
+
+    }
+
+
+    downloadBlob(
+      state.musicXML,
+      "orchestrai-partition.musicxml",
+      "application/vnd.recordare.musicxml+xml"
+    );
+
+    toast(
+      "MusicXML exporté."
+    );
+
+  }
+);
+
+
+/* ============================================================
+   MIDI EXPORT
+   ============================================================ */
+
+$("exportMIDI").addEventListener(
+  "click",
+  () => {
+
+    if (
+      !state.notes.length
+    ) {
+
+      toast(
+        "Aucune note à exporter."
+      );
+
+      return;
+
+    }
+
+
+    const midi =
+      createMIDI(
+        state.notes,
+        state.tempo || 100
+      );
+
+
+    downloadBlob(
+      midi,
+      "orchestrai-melodie.mid",
+      "audio/midi"
+    );
+
+    toast(
+      "MIDI exporté."
+    );
+
+  }
+);
+
+
+/* ============================================================
+   DOWNLOAD BLOB
+   ============================================================ */
+
+function downloadBlob(
+  content,
+  filename,
+  type
+) {
+
+  const blob =
+    content instanceof Blob
+      ? content
+      : new Blob(
+          [content],
+          { type }
+        );
+
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  const link =
+    document.createElement(
+      "a"
+    );
+
+  link.href =
+    url;
+
+  link.download =
+    filename;
+
+  document.body.appendChild(
+    link
+  );
+
+  link.click();
+
+  link.remove();
+
+  setTimeout(
+    () =>
+      URL.revokeObjectURL(
+        url
+      ),
+    1000
+  );
+
+}
+
+
+/* ============================================================
+   MIDI CREATION
+   ============================================================ */
+
+function createMIDI(
+  notes,
+  bpm
+) {
+
+  const PPQ =
+    480;
+
+  const ticksPerSecond =
+    PPQ *
+    bpm /
+    60;
+
+
+  /*
+   * MIDI header.
+   *
+   * Format 0
+   * One track
+   */
+
+  const bytes = [];
+
+
+  pushString(
+    bytes,
+    "MThd"
+  );
+
+  pushUint32(
+    bytes,
+    6
+  );
+
+  pushUint16(
+    bytes,
+    0
+  );
+
+  pushUint16(
+    bytes,
+    1
+  );
+
+  pushUint16(
+    bytes,
+    PPQ
+  );
+
+
+  const track =
+    [];
+
+
+  /*
+   * Tempo meta event.
+   */
+
+  pushVLQ(
+    track,
+    0
+  );
+
+  track.push(
+    0xff,
+    0x51,
+    0x03
+  );
+
+
+  const microseconds =
+    Math.round(
+      60000000 /
+      bpm
+    );
+
+  pushUint24(
+    track,
+    microseconds
+  );
+
+
+  /*
+   * Time signature 4/4
+   */
+
+  pushVLQ(
+    track,
+    0
+  );
+
+  track.push(
+    0xff,
+    0x58,
+    0x04,
+    0x04,
+    0x02,
+    0x18,
+    0x08
+  );
+
+
+  /*
+   * Build note events.
+   */
+
+  const events = [];
+
+
+  notes.forEach(
+    note => {
+
+      const startTick =
+        Math.max(
+          0,
+          Math.round(
+            note.start *
+            ticksPerSecond
+          )
+        );
+
+      const durationTick =
+        Math.max(
+          1,
+          Math.round(
+            note.duration *
+            ticksPerSecond
+          )
+        );
+
+      const endTick =
+        startTick +
+        durationTick;
+
+
+      events.push({
+
+        tick:
+          startTick,
+
+        type:
+          "on",
+
+        pitch:
+          clamp(
+            Math.round(
+              note.pitch
+            ),
+            0,
+            127
+          ),
+
+        velocity:
+          clamp(
+            Math.round(
+              note.velocity ||
+              90
+            ),
+            1,
+            127
+          )
+
+      });
+
+
+      events.push({
+
+        tick:
+          endTick,
+
+        type:
+          "off",
+
+        pitch:
+          clamp(
+            Math.round(
+              note.pitch
+            ),
+            0,
+            127
+          ),
+
+        velocity:
+          0
+
+      });
+
+    }
+  );
+
+
+  events.sort(
+    (a, b) => {
+
+      if (
+        a.tick !==
+        b.tick
+      ) {
+
+        return (
+          a.tick -
+          b.tick
+        );
+
+      }
+
+      /*
+       * Note-off before note-on
+       * at same tick.
+       */
+
+      if (
+        a.type === "off" &&
+        b.type === "on"
+      ) {
+
+        return -1;
+
+      }
+
+      return 1;
+
+    }
+  );
+
+
+  let previousTick = 0;
+
+
+  events.forEach(
+    event => {
+
+      const delta =
+        event.tick -
+        previousTick;
+
+      pushVLQ(
+        track,
+        delta
+      );
+
+
+      if (
+        event.type === "on"
+      ) {
+
+        track.push(
+          0x90,
+          event.pitch,
+          event.velocity
+        );
+
+      } else {
+
+        track.push(
+          0x80,
+          event.pitch,
+          0
+        );
+
+      }
+
+
+      previousTick =
+        event.tick;
+
+    }
+  );
+
+
+  /*
+   * End of track.
+   */
+
+  pushVLQ(
+    track,
+    0
+  );
+
+  track.push(
+    0xff,
+    0x2f,
+    0x00
+  );
+
+
+  pushString(
+    bytes,
+    "MTrk"
+  );
+
+  pushUint32(
+    bytes,
+    track.length
+  );
+
+
+  bytes.push(
+    ...track
+  );
+
+
+  return new Blob(
+    [
+      new Uint8Array(bytes)
+    ],
+    {
+      type:
+        "audio/midi"
+    }
+  );
+
+}
+
+
+/* ============================================================
+   MIDI HELPERS
+   ============================================================ */
+
+function pushString(
+  array,
+  value
+) {
+
+  for (
+    let i = 0;
+    i < value.length;
+    i++
+  ) {
+
+    array.push(
+      value.charCodeAt(i)
+    );
+
+  }
+
+}
+
+
+function pushUint16(
+  array,
+  value
+) {
+
+  array.push(
+    (value >> 8) & 0xff,
+    value & 0xff
+  );
+
+}
+
+
+function pushUint24(
+  array,
+  value
+) {
+
+  array.push(
+    (value >> 16) & 0xff,
+    (value >> 8) & 0xff,
+    value & 0xff
+  );
+
+}
+
+
+function pushUint32(
+  array,
+  value
+) {
+
+  array.push(
+    (value >>> 24) & 0xff,
+    (value >>> 16) & 0xff,
+    (value >>> 8) & 0xff,
+    value & 0xff
+  );
+
+}
+
+
+function pushVLQ(
+  array,
+  value
+) {
+
+  value =
+    Math.max(
+      0,
+      Math.floor(value)
+    );
+
+
+  let buffer =
+    value & 0x7f;
+
+
+  while (
+    (value >>= 7)
+  ) {
+
+    buffer <<= 8;
+
+    buffer |=
+      (value & 0x7f) |
+      0x80;
+
+  }
+
+
+  while (true) {
+
+    array.push(
+      buffer & 0xff
+    );
+
+    if (
+      buffer & 0x80
+    ) {
+
+      buffer >>= 8;
+
+    } else {
+
+      break;
+
+    }
+
+  }
+
+}
+
+
+/* ============================================================
+   PRINT / PDF
+   ============================================================ */
+
+$("printScore").addEventListener(
+  "click",
+  () => {
+
+    window.print();
+
+  }
+);
+
+
+/* ============================================================
+   GENERIC TRANSPOSITION
+   ============================================================ */
+
+$("transposeBtn").addEventListener(
+  "click",
+  () => {
+
+    if (
+      !state.originalNotes.length
+    ) {
+
+      toast(
+        "Aucune mélodie à transposer."
+      );
+
+      return;
+
+    }
+
+
+    const semitones =
+      parseInt(
+        $("transposeInput").value,
+        10
+      ) || 0;
+
+
+    state.notes =
+      state.originalNotes.map(
+        note => ({
+
+          ...note,
+
+          pitch:
+            clamp(
+              note.pitch +
+              semitones,
+              0,
+              127
+            )
+
+        })
+      );
+
+
+    renderDetectedNotes(
+      state.notes
+    );
+
+    buildMusicXML(
+      state.notes
+    );
+
+    renderScore(
+      state.musicXML
+    );
+
+
+    scoreInfo.textContent =
+      `${state.notes.length} notes · transposition ${semitones >= 0 ? "+" : ""}${semitones} demi-ton(s)`;
+
+    toast(
+      `Transposition ${semitones >= 0 ? "+" : ""}${semitones} demi-ton(s).`
+    );
+
+  }
+);
+
+
+/* ============================================================
+   MELODY PLAYBACK
+   ============================================================ */
+
+$("playMelody").addEventListener(
+  "click",
+  async () => {
+
+    if (
+      !state.notes.length
+    ) {
+
+      toast(
+        "Aucune mélodie disponible."
+      );
+
+      return;
+
+    }
+
+
+    stopMelody();
+
+
+    const context =
+      getAudioContext();
+
+
+    if (
+      context.state === "suspended"
+    ) {
+
+      await context.resume();
+
+    }
+
+
+    const startTime =
+      context.currentTime +
+      .05;
+
+
+    state.notes.forEach(
+      note => {
+
+        const oscillator =
+          context.createOscillator();
+
+        const gain =
+          context.createGain();
+
+
+        oscillator.type =
+          "sine";
+
+
+        oscillator.frequency.value =
+          midiToFrequency(
+            note.pitch
+          );
+
+
+        const start =
+          startTime +
+          note.start;
+
+
+        const end =
+          start +
+          Math.max(
+            .05,
+            note.duration
+          );
+
+
+        gain.gain.setValueAtTime(
+          0,
+          start
+        );
+
+        gain.gain.linearRampToValueAtTime(
+          .14,
+          start + .015
+        );
+
+        gain.gain.setValueAtTime(
+          .14,
+          Math.max(
+            start + .02,
+            end - .025
+          )
+        );
+
+        gain.gain.linearRampToValueAtTime(
+          0,
+          end
+        );
+
+
+        oscillator.connect(
+          gain
+        );
+
+        gain.connect(
+          context.destination
+        );
+
+
+        oscillator.start(
+          start
+        );
+
+        oscillator.stop(
+          end + .02
+        );
+
+
+        state.playbackNodes.push(
+          oscillator
+        );
+
+      }
+    );
+
+
+    toast(
+      "Lecture de la mélodie."
+    );
+
+  }
+);
+
+
+/* ============================================================
+   STOP PLAYBACK
+   ============================================================ */
+
+$("stopMelody").addEventListener(
+  "click",
+  stopMelody
+);
+
+
+function stopMelody() {
+
+  state.playbackNodes.forEach(
+    node => {
+
+      try {
+
+        node.stop();
+
+      } catch (_) {}
+
+      try {
+
+        node.disconnect();
+
+      } catch (_) {}
+
+    }
+  );
+
+
+  state.playbackNodes =
+    [];
+
+}
+
+
+/* ============================================================
+   HUMMING UI
+   ============================================================ */
+
+$("hummingBtn").addEventListener(
+  "click",
+  startHumming
+);
+
+
+recordButton.addEventListener(
+  "click",
+  startHumming
+);
+
+
+async function startHumming() {
+
+  if (
+    state.isRecording
+  ) {
+
+    stopHumming();
+
+    return;
+
+  }
+
+
+  try {
+
+    const stream =
+      await navigator.mediaDevices
+        .getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+
+
+    const mimeTypes = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/mp4"
+    ];
+
+
+    const supportedType =
+      mimeTypes.find(
+        type =>
+          MediaRecorder.isTypeSupported(
+            type
+          )
+      );
+
+
+    state.recorder =
+      new MediaRecorder(
+        stream,
+        supportedType
+          ? {
+              mimeType:
+                supportedType
+            }
+          : undefined
+      );
+
+
+    state.recorderStream =
+      stream;
+
+    state.recordingChunks =
+      [];
+
+    state.isRecording =
+      true;
+
+
+    recordButton.classList.add(
+      "recording"
+    );
+
+    recordButton.textContent =
+      "■";
+
+
+    hummingResult.textContent =
+      "Écoute en cours… fredonne maintenant.";
+
+
+    toast(
+      "Fredonne pendant 6 secondes."
+    );
+
+
+    state.recorder.ondataavailable =
+      event => {
+
+        if (
+          event.data &&
+          event.data.size > 0
+        ) {
+
+          state.recordingChunks.push(
+            event.data
+          );
+
+        }
+
+      };
+
+
+    state.recorder.onstop =
+      async () => {
+
+        try {
+
+          const blob =
+            new Blob(
+              state.recordingChunks,
+              {
+                type:
+                  state.recorder.mimeType ||
+                  "audio/webm"
+              }
+            );
+
+
+          const arrayBuffer =
+            await blob.arrayBuffer();
+
+
+          const context =
+            getAudioContext();
+
+
+          const audioBuffer =
+            await context.decodeAudioData(
+              arrayBuffer.slice(0)
+            );
+
+
+          setStatus(
+            "Analyse du fredonnement…"
+          );
+
+
+          const notes =
+            extractMelodyNotes(
+              audioBuffer
+            );
+
+
+          state.notes =
+            notes;
+
+          state.originalNotes =
+            notes.map(
+              note => ({
+                ...note
+              })
+            );
+
+
+          renderDetectedNotes(
+            notes
+          );
+
+
+          buildMusicXML(
+            notes
+          );
+
+
+          renderScore(
+            state.musicXML
+          );
+
+
+          scoreStatus.textContent =
+            "PRÊTE";
+
+          scoreInfo.textContent =
+            `${notes.length} notes issues du fredonnement`;
+
+
+          hummingResult.textContent =
+            notes.length
+              ? `Mélodie extraite : ${notes.length} notes.`
+              : "Aucune note stable détectée. Essaie de fredonner plus distinctement.";
+
+
+          setStatus(
+            "",
+            false
+          );
+
+
+        } catch (error) {
+
+          console.error(
+            error
+          );
+
+          toast(
+            "Le fredonnement n'a pas pu être analysé."
+          );
+
+        }
+
+      };
+
+
+    state.recorder.start();
+
+
+    /*
+     * Six-second recording window.
+     */
+
+    setTimeout(
+      () => {
+
+        if (
+          state.isRecording
+        ) {
+
+          stopHumming();
+
+        }
+
+      },
+      6000
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+    toast(
+      "Microphone inaccessible. Vérifie l'autorisation du navigateur."
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   STOP HUMMING
+   ============================================================ */
+
+function stopHumming() {
+
+  if (
+    !state.isRecording
+  ) {
+
+    return;
+
+  }
+
+
+  state.isRecording =
+    false;
+
+
+  recordButton.classList.remove(
+    "recording"
+  );
+
+  recordButton.textContent =
+    "●";
+
+
+  if (
+    state.recorder &&
+    state.recorder.state !==
+      "inactive"
+  ) {
+
+    state.recorder.stop();
+
+  }
+
+
+  if (
+    state.recorderStream
+  ) {
+
+    state.recorderStream
+      .getTracks()
+      .forEach(
+        track =>
+          track.stop()
+      );
+
+  }
+
+}
+
+
+/* ============================================================
+   STEM BUTTONS
+   ============================================================ */
+
+document
+  .querySelectorAll(
+    ".stem-button"
+  )
+  .forEach(
+    button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          const stem =
+            button.dataset.stem;
+
+          /*
+           * This UI is intentionally ready for
+           * actual separated stems.
+           *
+           * The browser cannot honestly claim to
+           * perform Demucs separation without a
+           * real model/backend.
+           */
+
+          toast(
+            `${stem.toUpperCase()} : module de séparation prêt à être connecté.`
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+/* ============================================================
+   WINDOW RESIZE
+   ============================================================ */
+
+let resizeTimer;
 
 window.addEventListener(
   "resize",
-  ()=>{
+  () => {
 
-    if(
-      state.buffer
-    ){
+    clearTimeout(
+      resizeTimer
+    );
 
-      drawWaveform(
-        state.buffer
+    resizeTimer =
+      setTimeout(
+        () => {
+
+          if (
+            state.audioBuffer
+          ) {
+
+            drawWaveform(
+              state.audioBuffer
+            );
+
+            drawSpectrogram(
+              state.audioBuffer
+            );
+
+          }
+
+          if (
+            state.osmd
+          ) {
+
+            try {
+
+              state.osmd.render();
+
+            } catch (_) {}
+
+          }
+
+        },
+        180
       );
 
-      drawFingerprint(
-        state.buffer
-      );
+  }
+);
+
+
+/* ============================================================
+   INITIAL UI
+   ============================================================ */
+
+scoreStatus.textContent =
+  "EN ATTENTE";
+
+
+/* ============================================================
+   OPTIONAL BACKEND HOOKS
+   ============================================================ */
+
+/*
+ * ORCHESTRAi V4 — AI BACKEND CONTRACT
+ *
+ * Ces fonctions sont volontairement présentes comme points
+ * d'extension. Elles peuvent être reliées à une API FastAPI,
+ * Node.js, Cloud Run, Hugging Face Space, serveur GPU, etc.
+ *
+ * Exemple conceptuel :
+ *
+ * POST /api/transcribe
+ * multipart/form-data
+ *   audio = fichier
+ *
+ * réponse :
+ *
+ * {
+ *   notes: [
+ *     {
+ *       pitch: 60,
+ *       start: 0,
+ *       duration: 1
+ *     }
+ *   ],
+ *   tempo: 96,
+ *   key: "C major",
+ *   confidence: 0.94
+ * }
+ *
+ *
+ * POST /api/separate
+ *
+ * réponse :
+ *
+ * {
+ *   stems: {
+ *     vocals: "...",
+ *     drums: "...",
+ *     bass: "...",
+ *     other: "..."
+ *   }
+ * }
+ *
+ *
+ * POST /api/fingerprint
+ *
+ * réponse :
+ *
+ * {
+ *   matches: [
+ *     {
+ *       title: "...",
+ *       artist: "...",
+ *       score: 0.91
+ *     }
+ *   ]
+ * }
+ *
+ */
+
+
+/* ============================================================
+   FUTURE POLYPHONIC TRANSCRIPTION HOOK
+   ============================================================ */
+
+async function transcribeWithBackend(
+  file
+) {
+
+  /*
+   * Example only.
+   *
+   * Uncomment and adapt once your backend exists.
+   */
+
+
+  /*
+  const formData =
+    new FormData();
+
+  formData.append(
+    "audio",
+    file
+  );
+
+  const response =
+    await fetch(
+      "/api/transcribe",
+      {
+        method: "POST",
+        body: formData
+      }
+    );
+
+  if (!response.ok) {
+    throw new Error(
+      "Backend transcription failed"
+    );
+  }
+
+  return response.json();
+  */
+
+  return null;
+
+}
+
+
+/* ============================================================
+   FUTURE DEMUCS HOOK
+   ============================================================ */
+
+async function separateWithBackend(
+  file
+) {
+
+  /*
+   * Real Demucs inference should be performed
+   * by a GPU-capable backend for production use.
+   */
+
+  return null;
+
+}
+
+
+/* ============================================================
+   FUTURE FINGERPRINT HOOK
+   ============================================================ */
+
+async function fingerprintWithBackend(
+  file
+) {
+
+  /*
+   * This is where a real audio fingerprint
+   * database should be queried.
+   */
+
+  return null;
+
+}
+
+
+/* ============================================================
+   FUTURE HUMMING SEARCH
+   ============================================================ */
+
+function melodyContour(
+  notes
+) {
+
+  if (
+    notes.length < 2
+  ) {
+
+    return "";
+
+  }
+
+
+  let result = "";
+
+
+  for (
+    let i = 1;
+    i < notes.length;
+    i++
+  ) {
+
+    const difference =
+      notes[i].pitch -
+      notes[i - 1].pitch;
+
+
+    if (
+      difference > 0
+    ) {
+
+      result += "U";
+
+    } else if (
+      difference < 0
+    ) {
+
+      result += "D";
+
+    } else {
+
+      result += "S";
+
+    }
+
+  }
+
+
+  return result;
+
+}
+
+
+/* ============================================================
+   DTW
+   ============================================================ */
+
+function dynamicTimeWarping(
+  sequenceA,
+  sequenceB
+) {
+
+  const n =
+    sequenceA.length;
+
+  const m =
+    sequenceB.length;
+
+
+  if (
+    n === 0 ||
+    m === 0
+  ) {
+
+    return Infinity;
+
+  }
+
+
+  const matrix =
+    Array.from(
+      {
+        length:
+          n + 1
+      },
+      () =>
+        new Array(
+          m + 1
+        ).fill(
+          Infinity
+        )
+    );
+
+
+  matrix[0][0] =
+    0;
+
+
+  for (
+    let i = 1;
+    i <= n;
+    i++
+  ) {
+
+    for (
+      let j = 1;
+      j <= m;
+      j++
+    ) {
+
+      const cost =
+        sequenceA[i - 1] ===
+        sequenceB[j - 1]
+          ? 0
+          : 1;
+
+
+      matrix[i][j] =
+        cost +
+        Math.min(
+          matrix[i - 1][j],
+          matrix[i][j - 1],
+          matrix[i - 1][j - 1]
+        );
+
+    }
+
+  }
+
+
+  return matrix[n][m];
+
+}
+
+
+/* ============================================================
+   VISIBILITY
+   ============================================================ */
+
+document.addEventListener(
+  "visibilitychange",
+  () => {
+
+    if (
+      document.hidden
+    ) {
+
+      stopMelody();
 
     }
 
@@ -5524,17 +6133,31 @@ window.addEventListener(
 );
 
 
-/* =========================================================
-   INIT
-   ========================================================= */
+/* ============================================================
+   DEBUG
+   ============================================================ */
 
-console.log(
-  "%cORCHESTRAi%c ready",
-  "color:#e6c36a;font-weight:700",
-  "color:#999"
-);
+window.OrchestrAI = {
+
+  state,
+
+  analyzeAudio,
+
+  transcribeMelody,
+
+  buildMusicXML,
+
+  renderScore,
+
+  melodyContour,
+
+  dynamicTimeWarping
+
+};
+
 
 </script>
 
 </body>
 </html>
+

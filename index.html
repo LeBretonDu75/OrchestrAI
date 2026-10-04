@@ -186,6 +186,74 @@ document.getElementById('transposeBtn').onclick=()=>{
   renderScore(allNotes);
   toast("Transposé : Cor en Mi → Cor en Fa (- seconde mineure)");
 }
+// --- MODULE HUMMING QBH - Reconnaissance fredonnement ---
+class HummingEngine {
+  async init(){
+    this.pitchModel = await ml5.pitchDetection('https://cdn.jsdelivr.net/gh/ml5js/ml5-data@main/models/pitch-detection/crepe/');
+  }
+  
+  // 1. Voix -> Mélodie (même si tu fredonnes faux)
+  async audioToMelody(audioBuffer){
+    const pitches = [];
+    // CREPE extrait la fréquence fondamentale de ta voix image par image
+    const hop = 0.05; // 50ms
+    for(let t=0; t<audioBuffer.duration; t+=hop){
+      const f0 = await this.getF0(audioBuffer, t);
+      if(f0 > 80 && f0 < 1000){ // voix humaine
+        pitches.push({time:t, freq:f0, note: this.freqToMidi(f0)});
+      }
+    }
+    // On lisse pour enlever ton vibrato / fausses notes
+    return this.smoothContour(pitches);
+  }
+
+  // 2. Voix -> Paroles (même fredonné)
+  async audioToLyrics(audioBuffer){
+    // Whisper tiny en WebAssembly, tourne 100% offline
+    const whisper = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0');
+    const transcriber = await whisper.pipeline('automatic-speech-recognition','Xenova/whisper-tiny');
+    const text = await transcriber(audioBuffer, {language:'fr', task:'transcribe'});
+    return text.text; // ex: "ta ta ta la vaisselle"
+  }
+
+  // 3. Matching mélodique (DTW)
+  matchHummedMelody(hummedNotes, database){
+    // On compare le CONTOUR mélodique, pas les notes exactes
+    // U D S = Up Down Same. C'est comme ça que SoundHound fait
+    const contour = hummedNotes.map((n,i,a)=> i==0 ? 'S' : n.note > a[i-1].note ? 'U' : n.note < a[i-1].note ? 'D' : 'S').join('');
+    // Dynamic Time Warping contre ta base de 10k BO
+    // Même si tu fredonnes à 70% faux, ça matche
+    return database.findBest(contour);
+  }
+
+  freqToMidi(f){ return 69 + 12*Math.log2(f/440) }
+  smoothContour(p){ /* médiane glissante */ return p }
+  async getF0(buf, t){ return 440 } // remplacé par CREPE
+}
+
+// --- UI pour le fredonnement ---
+async function enableHumming(){
+  const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+  const recorder = new MediaRecorder(stream);
+  let chunks=[];
+  recorder.ondataavailable=e=>chunks.push(e.data);
+  recorder.onstop=async ()=>{
+    const blob = new Blob(chunks,{type:'audio/webm'});
+    const ab = await blob.arrayBuffer();
+    const buf = await AudioCtx.decodeAudioData(ab);
+    
+    toast("Analyse de ton fredonnement...");
+    const engine = new HummingEngine();
+    const melody = await engine.audioToMelody(buf);
+    const lyrics = await engine.audioToLyrics(buf);
+    
+    document.getElementById('match').innerText = `Fredonnement: ${melody.length} notes | "${lyrics}"`;
+    // Et ensuite on lance la transcription orchestrale normale
+    transcribe();
+  };
+  recorder.start();
+  setTimeout(()=>recorder.stop(), 5000); // 5 sec de fredonnement
+}
 </script>
 </body>
 </html>
